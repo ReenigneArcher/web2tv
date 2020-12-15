@@ -4,6 +4,7 @@ plex2xml is a python 2 script which will load and parse Live TV (On Plex) guide 
 This does not work in python 3 yet. If anyone would like to review the code to get it up to python 3 standards that would be welcome.
 
 Arguments:
+
 -t, --token     Token is required. To obtain token open plex in a Firefox and login. Then right click the page and then click "Inspect Element". Go to the network tab of the inspector. Open the Live TV (From Plex) section. Now sort the inspector by domain and look for the domain that is "epg.provider.plex.tv". Double click the file that begins with grid?. The token is found in the url of this page.
 
 -d, --days      Days of EPG to collect. Default: 7
