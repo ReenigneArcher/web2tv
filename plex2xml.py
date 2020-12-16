@@ -107,8 +107,11 @@ if __name__ == '__main__':
     channel_dict = {'data': []}
     program_dict = {'data': []}
     
-    key_errors = []
-    error_program = []
+    keyErrors_contentRating = []
+    errorDetails_contentRating = []
+    
+    keyErrors_channelCategory = []
+    errorDetails_chanelCategory = []
 
     #dictionary prebuild
     rating_system = { 'tv-y' : 'TV Parental Guidelines',
@@ -396,9 +399,9 @@ if __name__ == '__main__':
 
     x = 0
     while x < len(channel_list): #do this for each channel
-        xml += '\n\t<channel id="' + 'PLEX.TV.' + channel_list[x]['channelTitle'].replace(' ', '.') + '">'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelTitle'] + '</display-name>'
+        xml += '\n\t<channel id="' + 'PLEX.TV.' + channel_list[x]['channelShortTitle'].replace(' ', '.') + '">'
         xml += '\n\t\t<display-name>' + channel_list[x]['channelShortTitle'] + '</display-name>'
+        xml += '\n\t\t<display-name>' + channel_list[x]['channelTitle'] + '</display-name>'
         xml += '\n\t\t<display-name>' + channel_list[x]['channelVcn'] + '</display-name>'
         xml += '\n\t\t<display-name>' + channel_list[x]['channelIdentifier'] + '</display-name>'
         xml += '\n\t\t<icon src="' + channel_list[x]['channelThumb'] + '" />'
@@ -455,8 +458,11 @@ if __name__ == '__main__':
                 print(program_list[x]['title'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
                 xml += '\n\t\t<icon src="' + program_list[x]['thumb'] + '" />' #thumb/icon
             
-            xml += '\n\t\t<category lang="' + x_plex_language + '">' + channel_category[program_list[x]['channelVcn']] + '</category>' #music category
-                
+            try:
+                xml += '\n\t\t<category lang="' + x_plex_language + '">' + channel_category[program_list[x]['channelVcn']] + '</category>' #music category
+            except KeyError:
+                keyErrors_channelCategory.append(program_list[x]['channelVcn'])
+                errorDetails_chanelCategory.append('Vcn: ' + program_list[x]['channelVcn'] + ', ChannelTitle: ' + program_list[x]['channelTitle'])
             
             #content rating key
             #print(program_list[x]['contentRating'])
@@ -466,8 +472,8 @@ if __name__ == '__main__':
                     xml += '\n\t\t\t<value>' + program_list[x]['contentRating'] + '</value>' #rating
                     xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['contentRating'].lower()] + '" />' #rating logo from dictionary
                 except KeyError:
-                    key_errors.append(program_list[x]['contentRating'])
-                    error_program.append('Title: ' + program_list[x]['title'] + ', GrandparentTitle: ' + program_list[x]['grandparentTitle'])
+                    keyErrors_contentRating.append(program_list[x]['contentRating'])
+                    errorDetails_contentRating.append('Title: ' + program_list[x]['title'] + ', GrandparentTitle: ' + program_list[x]['grandparentTitle'])
                 xml += '\n\t\t</rating>' #end rating key
             
             if program_list[x]['premiere'] == '0': #if not premiere add the previously shown tag
@@ -500,10 +506,16 @@ if __name__ == '__main__':
     file_handle.close()
     print('xml is being closed')
     
-    if key_errors != []:
+    if keyErrors_contentRating != []:
         print('...')
-        print('The following key_errors were found. :' +str(key_errors))
-        print(error_program)
+        print('The following content rating key_errors were found. :' +str(keyErrors_contentRating))
+        print(errorDetails_contentRating)
+        print('Submit an issue on github so they can be added.')
+    
+    if keyErrors_channelCategory != []:
+        print('...')
+        print('The following channel key_errors were found. :' +str(keyErrors_channelCategory))
+        print(errorDetails_chanelCategory)
         print('Submit an issue on github so they can be added.')
 
 '''
