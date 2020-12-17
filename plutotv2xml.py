@@ -81,9 +81,9 @@ if __name__ == '__main__':
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of EPG to collect.')
+    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[1], help='Days of EPG to collect.')
     parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect.')
-    parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plex2xml.xml'], help='Full destination filepath. Default is plex2xml.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv2xml.xml'], help='Full destination filepath. Default is plex2xml.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
     parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.')
     opts = parser.parse_args()
     
