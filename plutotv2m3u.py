@@ -95,7 +95,7 @@ if __name__ == '__main__':
     now_30 = now - (now % half_hour) #go back to nearest 30 minutes
     epg_begin = str(datetime.fromtimestamp(now_30)).replace(' ', 'T') + '-00:00'
 
-    epg_end = (2 * 60 * 60) + now_30 + half_hour
+    epg_end = (day) + now_30 + half_hour
     epg_end = str(datetime.fromtimestamp(epg_end)).replace(' ', 'T') + '-00:00'
 
     print('Loading Grid for PlutoTV')
