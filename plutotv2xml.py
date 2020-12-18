@@ -6,6 +6,7 @@ import time
 from datetime import datetime, date
 import json
 import dateutil.parser
+import cgi
 
 
 #xml constants
@@ -68,6 +69,7 @@ if __name__ == '__main__':
         opener = urllib2.build_opener()
         f = opener.open(req)
         result = json.loads(f.read())
+        #result = json.loads(f.read().encode('unicode_escape').decode('utf-8'))
         return result
     
     def isotime_convert(iso_time):
@@ -77,6 +79,13 @@ if __name__ == '__main__':
     
     def change_text(text): #https://stackoverflow.com/a/30320137/11214013
         return text.encode('utf-8')  # assuming the encoding is UTF-8
+    
+    def fix(text):
+        #text = text.replace(u'\2019', "214600x").replace(u'\2013', '214600y').replace(u'\200b', '214600z')
+        
+        #text = text.encode('unicode_escape').encode('raw_unicode_escape').decode('utf-8'))
+        text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
+        return text
 
     
     #argparse
@@ -196,18 +205,18 @@ if __name__ == '__main__':
     x = 0
     for key in grid['channels']:
         channel_dict['data'].append({
-            'channelName': grid['channels'][x]['name'], #name
-            'channelSlug': grid['channels'][x]['slug'], #slug
-            'channelHash': grid['channels'][x]['hash'], #hash
+            'channelName': fix(grid['channels'][x]['name']), #name
+            'channelSlug': fix(grid['channels'][x]['slug']), #slug
+            'channelHash': fix(grid['channels'][x]['hash']), #hash
             'channelNumber': grid['channels'][x]['number'], #number
-            'channelId': grid['channels'][x]['id'], #id
-            'channelSummary': grid['channels'][x]['id'], #summary
-            'channelImage': grid['channels'][x]['images'][0]['url'] }) #logo
+            'channelId': fix(grid['channels'][x]['id']), #id
+            'channelSummary': fix(grid['channels'][x]['summary']), #summary
+            'channelImage': fix(grid['channels'][x]['images'][0]['url']) }) #logo
         
         y = 0
         for key in grid['channels'][x]['timelines']:
             try:
-                title = grid['channels'][x]['timelines'][y]['title']
+                title = fix(grid['channels'][x]['timelines'][y]['title'])
             except KeyError as e:
                 title = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -237,7 +246,7 @@ if __name__ == '__main__':
                 episode_number = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_description = grid['channels'][x]['timelines'][y]['episode']['description'] #episode description
+                episode_description = fix(grid['channels'][x]['timelines'][y]['episode']['description']) #episode description
             except KeyError as e:
                 episode_description = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -252,12 +261,12 @@ if __name__ == '__main__':
                 episode_originalContentDuration = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_genre = grid['channels'][x]['timelines'][y]['episode']['genre'] #episode genre
+                episode_genre = fix(grid['channels'][x]['timelines'][y]['episode']['genre']) #episode genre
             except KeyError as e:
                 episode_genre = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_subGenre = grid['channels'][x]['timelines'][y]['episode']['subGenre'] #episode sub genre
+                episode_subGenre = fix(grid['channels'][x]['timelines'][y]['episode']['subGenre']) #episode sub genre
             except KeyError as e:
                 episode_subGenre = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -272,17 +281,17 @@ if __name__ == '__main__':
                 episode_rating = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_name = grid['channels'][x]['timelines'][y]['episode']['name'] #episode name
+                episode_name = fix(grid['channels'][x]['timelines'][y]['episode']['name']) #episode name
             except KeyError as e:
                 episode_name = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_slug = grid['channels'][x]['timelines'][y]['episode']['slug'] #episode slug
+                episode_slug = fix(grid['channels'][x]['timelines'][y]['episode']['slug']) #episode slug
             except KeyError as e:
                 episode_slug = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_poster_path = grid['channels'][x]['timelines'][y]['episode']['poster']['path'] #episode slug
+                episode_poster_path = fix(grid['channels'][x]['timelines'][y]['episode']['poster']['path']) #episode slug
             except KeyError as e:
                 episode_poster_path = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -292,7 +301,7 @@ if __name__ == '__main__':
                 episode_firstAired = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_thumbnail_path = grid['channels'][x]['timelines'][y]['episode']['thumbnail']['path'] #episode thumbnail path
+                episode_thumbnail_path = fix(grid['channels'][x]['timelines'][y]['episode']['thumbnail']['path']) #episode thumbnail path
             except KeyError as e:
                 episode_thumbnail_path = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -302,7 +311,7 @@ if __name__ == '__main__':
                 episode_liveBroadcast = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_featuredImage_path = grid['channels'][x]['timelines'][y]['episode']['featuredImage']['path'] #episode featured image path
+                episode_featuredImage_path = fix(grid['channels'][x]['timelines'][y]['episode']['featuredImage']['path']) #episode featured image path
             except KeyError as e:
                 episode_featuredImage_path = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -312,12 +321,12 @@ if __name__ == '__main__':
                 episode_series_id = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_series_name = grid['channels'][x]['timelines'][y]['episode']['series']['name'] #episode series name
+                episode_series_name = fix(grid['channels'][x]['timelines'][y]['episode']['series']['name']) #episode series name
             except KeyError as e:
                 episode_series_name = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_series_slug = grid['channels'][x]['timelines'][y]['episode']['series']['slug'] #episode series slug
+                episode_series_slug = fix(grid['channels'][x]['timelines'][y]['episode']['series']['slug']) #episode series slug
             except KeyError as e:
                 episode_series_slug = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -327,22 +336,22 @@ if __name__ == '__main__':
                 episode_series_type = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_series_tile_path = grid['channels'][x]['timelines'][y]['episode']['series']['tile']['path'] #episode series tile path
+                episode_series_tile_path = fix(grid['channels'][x]['timelines'][y]['episode']['series']['tile']['path']) #episode series tile path
             except KeyError as e:
                 episode_series_tile_path = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_series_description = grid['channels'][x]['timelines'][y]['episode']['series']['description'] #episode series description
+                episode_series_description = fix(grid['channels'][x]['timelines'][y]['episode']['series']['description']) #episode series description
             except KeyError as e:
                 episode_series_description = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_series_summary = grid['channels'][x]['timelines'][y]['episode']['series']['summary'] #episode series summary
+                episode_series_summary = fix(grid['channels'][x]['timelines'][y]['episode']['series']['summary']) #episode series summary
             except KeyError as e:
                 episode_series_summary = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_series_featuredImage_path = grid['channels'][x]['timelines'][y]['episode']['series']['featuredImage']['path'] #episode series featured image path
+                episode_series_featuredImage_path = fix(grid['channels'][x]['timelines'][y]['episode']['series']['featuredImage']['path']) #episode series featured image path
             except KeyError as e:
                 episode_series_featuredImage_path = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -407,138 +416,142 @@ if __name__ == '__main__':
 
     x = 0
     while x < len(program_list): #do this for each program
-        timeStart = isotime_convert(program_list[x]['start'])
-        timeEnd = isotime_convert(program_list[x]['stop'])
-        timeAdded = isotime_convert(program_list[x]['episode_clip_originalReleaseDate'])
-        timeOriginal = isotime_convert(program_list[x]['episode_firstAired'])
-        
-        #print(timeStart)
-        #print(timeEnd)
-        #print(timeAdded)
-        #print(timeOriginal)
-        
-        xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="' + program_list[x]['channelSlug'] + '">' #program,, start, and end time
-        
-        xml += '\n\t\t<desc lang="' + 'en' + '">' + program_list[x]['episode_description'] + '</desc>' #description/summary
-        xml += '\n\t\t<length units="seconds">' + str(program_list[x]['episode_duration'] / 1000) + '</length>' #duration/length
-        if timeAdded != "": #if timeAdded is not blank
-            xml += '\n\t\t<date>' + timeAdded + ' ' + offset + '</date>' #date
-        
-        xml += '\n\t\t<title lang="' + 'en' + '">' + program_list[x]['episode_series_name'] + '</title>' #title
-        
-        try:
-            print('Airing: ' + str(x+1) + '/' + str(len(program_list)) + ' will be added to the xml... ' + program_list[x]['episode_series_name'] + ',_id: ' + program_list[x]['_id'])
-        except SyntaxError as e:
-            print("---Cannot print this title due to SyntaxError: " + str(e))
-        except UnicodeEncodeError as e:
-            #print(change_text(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
-            print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
-        
-        if program_list[x]['episode_name'] != program_list[x]['episode_series_name']: #if not equal
-            xml += '\n\t\t<sub-title lang="' + 'en' + '">' + program_list[x]['episode_name'] + '</sub-title>' #sub-title/tagline
-        xml += '\n\t\t<icon src="' + program_list[x]['episode_series_featuredImage_path'] + '" />' #thumb/icon
-        
-        #print(program_list[x]['episode_series_type'])
-        if program_list[x]['episode_series_type'] == 'tv':
-            #episode numbering
-            temp = program_list[x]['episode_slug'].split('-')
-            se_tmp = str(program_list[x]['episode_number']).rsplit('0',1)
-            #print(temp)
-            if temp[-1] == 'embed':
-                del temp[-1]
-            if temp[-1][:3] == 'ptv':
-                part = temp[-1][3:]
-                del temp[-1]
-            else:
-                part = ''
-            try: #https://stackoverflow.com/a/3501408/11214013
-                season = temp[-2]
-                t = int(season) + 1
-            except:
-                season = ''
-            if season != '' and str(program_list[x]['episode_number']) == temp[-1] or se_tmp[-1] == temp[-1]: #example for or: tv: rule does not match... Episode: 405 Slug: [u'280', u'sq', u'ft', u'bohemian', u'tree', u'house', u'2017', u'4', u'5']
-                try: #https://stackoverflow.com/a/3501408/11214013
-                    episode = temp[-1]
-                    t = int(episode) + 1
-                except:
-                    episode = ''
-                if season == episode[:len(season)]:
-                    episode = temp[-1][len(season):]
-                #print('tv: rule1 matches')
-            elif str(program_list[x]['episode_number']) == temp[-1][len(season):]: #exmaple tv: rule does not match... Episode: 1 Slug: [u'whistle', u'blower', u'1996', u'2', u'21']
-                episode = temp[-1][len(season):]
-                try: #https://stackoverflow.com/a/3501408/11214013
-                    t = int(episode) + 1
-                except:
-                    episode = ''
-                #print('tv: rule2 matches')
-            else:
-                episode = ''
-                #print(se_tmp)
-                #print(temp[-1][len(season):])
-                #print('tv: rule does not match... Episode: ' + str(program_list[x]['episode_number']) + ' Slug: ' + str(temp))
-            #print(season)
-            #print(episode)
-            if season != ''and int(season) > 0:
-                if episode != '' and int(episode) > 0:
-                    if int(season) < 10:
-                        num_season = '0' + season
-                    else:
-                        num_season = season
-                    if int(episode) < 10:
-                        num_episode = '0' + episode
-                    else:
-                        num_episode = episode
-                    xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                    xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                    indexSeason = int(season)
-                    indexSeason -= 1
-                    indexEpisode = int(episode)
-                    indexEpisode -= 1
-                    xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '</episode-num>' #episode number
-            xml += '\n\t\t<episode-num system="pluto.tv.number">' + str(program_list[x]['episode_number']) + '</episode-num>' #episode number
-            xml += '\n\t\t<episode-num system="pluto.tv.slug">' + program_list[x]['episode_slug'] + '</episode-num>' #episode number
-            xml += '\n\t\t<episode-num system="pluto.tv.id">' + program_list[x]['episode_id'] + '</episode-num>' #episode number
-        
-            xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_genre'] + '</category>' #category
-            xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_series_type'] + '</category>' #category
-        
-        #content rating key
-        #print(program_list[x]['contentRating'])
-        if program_list[x]['episode_rating'] != '': #if not blank
-            try:
-                xml += '\n\t\t<rating system="' + rating_system[program_list[x]['episode_rating'].lower()] + '">' #rating system
-                xml += '\n\t\t\t<value>' + program_list[x]['episode_rating'] + '</value>' #rating
-                xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['episode_rating'].lower()] + '" />' #rating logo from dictionary
-            except KeyError:
-                keyErrors_contentRating.append(program_list[x]['episode_rating'])
-                errorDetails_contentRating.append('Title: ' + program_list[x]['episode_name'] + ', Channel: ' + program_list[x]['channelSlug'])
-            xml += '\n\t\t</rating>' #end rating key
-        
-        if program_list[x]['episode_firstAired'] != '': #if first aired is not blank add the premier
-            if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
-                xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
-            else: #else don't add start time to the tag
-                xml += '\n\t\t<previously-shown />'
-        else: #if program is premiere add the tag
-            xml += '\n\t\t<premiere />'
+        if program_list[x]['episode_duration'] / 1000 > 0: #if duration is greater than 0
+            timeStart = isotime_convert(program_list[x]['start'])
+            timeEnd = isotime_convert(program_list[x]['stop'])
+            timeAdded = isotime_convert(program_list[x]['episode_clip_originalReleaseDate'])
+            timeOriginal = isotime_convert(program_list[x]['episode_firstAired'])
             
-        if program_list[x]['episode_liveBroadcast'] == 'true':
-            xml += '\n\t\t<live />'
-        
-        #finish
-        xml += '\n\t</programme>'
-        
+            #print(timeStart)
+            #print(timeEnd)
+            #print(timeAdded)
+            #print(timeOriginal)
+            
+            xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLUTO.TV.' + program_list[x]['channelSlug'] + '">' #program,, start, and end time
+            
+            xml += '\n\t\t<desc lang="' + 'en' + '">' + program_list[x]['episode_description'] + '</desc>' #description/summary
+            xml += '\n\t\t<length units="seconds">' + str(program_list[x]['episode_duration'] / 1000) + '</length>' #duration/length
+            if timeAdded != "": #if timeAdded is not blank
+                xml += '\n\t\t<date>' + timeAdded + ' ' + offset + '</date>' #date
+            
+            xml += '\n\t\t<title lang="' + 'en' + '">' + program_list[x]['episode_series_name'] + '</title>' #title
+            
+            try:
+                print('   Airing: ' + str(x+1) + '/' + str(len(program_list)) + ' will be added to the xml... ' + fix(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'])
+            except SyntaxError as e:
+                print("---Cannot print this title due to SyntaxError: " + str(e))
+                time.sleep(2)
+            except UnicodeEncodeError as e:
+                #print(change_text(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
+                print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
+                time.sleep(2)
+            
+            if program_list[x]['episode_name'] != program_list[x]['episode_series_name']: #if not equal
+                xml += '\n\t\t<sub-title lang="' + 'en' + '">' + program_list[x]['episode_name'] + '</sub-title>' #sub-title/tagline
+            xml += '\n\t\t<icon src="' + program_list[x]['episode_series_featuredImage_path'] + '" />' #thumb/icon
+            
+            #print(program_list[x]['episode_series_type'])
+            if program_list[x]['episode_series_type'] == 'tv':
+                #episode numbering
+                temp = program_list[x]['episode_slug'].split('-')
+                se_tmp = str(program_list[x]['episode_number']).rsplit('0',1)
+                #print(temp)
+                if temp[-1] == 'embed':
+                    del temp[-1]
+                if temp[-1][:3] == 'ptv':
+                    part = temp[-1][3:]
+                    del temp[-1]
+                else:
+                    part = ''
+                try: #https://stackoverflow.com/a/3501408/11214013
+                    season = temp[-2]
+                    t = int(season) + 1
+                except:
+                    season = ''
+                if season != '' and str(program_list[x]['episode_number']) == temp[-1] or se_tmp[-1] == temp[-1]: #example for or: tv: rule does not match... Episode: 405 Slug: [u'280', u'sq', u'ft', u'bohemian', u'tree', u'house', u'2017', u'4', u'5']
+                    try: #https://stackoverflow.com/a/3501408/11214013
+                        episode = temp[-1]
+                        t = int(episode) + 1
+                    except:
+                        episode = ''
+                    if season == episode[:len(season)]:
+                        episode = temp[-1][len(season):]
+                    #print('tv: rule1 matches')
+                elif str(program_list[x]['episode_number']) == temp[-1][len(season):]: #exmaple tv: rule does not match... Episode: 1 Slug: [u'whistle', u'blower', u'1996', u'2', u'21']
+                    episode = temp[-1][len(season):]
+                    try: #https://stackoverflow.com/a/3501408/11214013
+                        t = int(episode) + 1
+                    except:
+                        episode = ''
+                    #print('tv: rule2 matches')
+                else:
+                    episode = ''
+                    #print(se_tmp)
+                    #print(temp[-1][len(season):])
+                    #print('tv: rule does not match... Episode: ' + str(program_list[x]['episode_number']) + ' Slug: ' + str(temp))
+                #print(season)
+                #print(episode)
+                if season != ''and int(season) > 0:
+                    if episode != '' and int(episode) > 0:
+                        if int(season) < 10:
+                            num_season = '0' + season
+                        else:
+                            num_season = season
+                        if int(episode) < 10:
+                            num_episode = '0' + episode
+                        else:
+                            num_episode = episode
+                        xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                        xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                        indexSeason = int(season)
+                        indexSeason -= 1
+                        indexEpisode = int(episode)
+                        indexEpisode -= 1
+                        xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '</episode-num>' #episode number
+                xml += '\n\t\t<episode-num system="pluto.tv.number">' + str(program_list[x]['episode_number']) + '</episode-num>' #episode number
+                xml += '\n\t\t<episode-num system="pluto.tv.slug">' + program_list[x]['episode_slug'] + '</episode-num>' #episode number
+                xml += '\n\t\t<episode-num system="pluto.tv.id">' + program_list[x]['episode_id'] + '</episode-num>' #episode number
+            
+                xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_genre'] + '</category>' #category
+                xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_series_type'] + '</category>' #category
+            
+            #content rating key
+            #print(program_list[x]['contentRating'])
+            if program_list[x]['episode_rating'] != '': #if not blank
+                try:
+                    xml += '\n\t\t<rating system="' + rating_system[program_list[x]['episode_rating'].lower()] + '">' #rating system
+                    xml += '\n\t\t\t<value>' + program_list[x]['episode_rating'] + '</value>' #rating
+                    xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['episode_rating'].lower()] + '" />' #rating logo from dictionary
+                except KeyError:
+                    keyErrors_contentRating.append(program_list[x]['episode_rating'])
+                    errorDetails_contentRating.append('Title: ' + program_list[x]['episode_name'] + ', Channel: ' + program_list[x]['channelSlug'])
+                xml += '\n\t\t</rating>' #end rating key
+            
+            if program_list[x]['episode_firstAired'] != '': #if first aired is not blank add the premier
+                if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
+                    xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
+                else: #else don't add start time to the tag
+                    xml += '\n\t\t<previously-shown />'
+            else: #if program is premiere add the tag
+                xml += '\n\t\t<premiere />'
+                
+            if program_list[x]['episode_liveBroadcast'] == 'true':
+                xml += '\n\t\t<live />'
+            
+            #finish
+            xml += '\n\t</programme>'
+            
         x += 1
 
     xml += '\n</tv>'
+    xml = xml.decode('unicode_escape').encode('utf-8')
     print('xml is ready to write')
     #print(xml)
 
     #write the file
     file_handle = open(xml_destination, "w")
     print('xml is being created')
-    xml = change_text(xml)
+    #xml = change_text(xml)
     file_handle.write(xml)
     print('xml is being written')
     file_handle.close()
