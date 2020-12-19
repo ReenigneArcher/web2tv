@@ -69,7 +69,6 @@ if __name__ == '__main__':
         opener = urllib2.build_opener()
         f = opener.open(req)
         result = json.loads(f.read())
-        #result = json.loads(f.read().encode('unicode_escape').decode('utf-8'))
         return result
     
     def isotime_convert(iso_time):
@@ -81,19 +80,16 @@ if __name__ == '__main__':
         return text.encode('utf-8')  # assuming the encoding is UTF-8
     
     def fix(text):
-        #text = text.replace(u'\2019', "214600x").replace(u'\2013', '214600y').replace(u'\200b', '214600z')
-        
-        #text = text.encode('unicode_escape').encode('raw_unicode_escape').decode('utf-8'))
         text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
         return text
 
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[1], help='Days of EPG to collect.')
-    parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect.')
-    parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv2xml.xml'], help='Full destination filepath. Default is plex2xml.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
-    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.')
+    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[1], help='Days of EPG to collect. Pluto.TV only provides 24 hours of EPG. Increasing this number will have little or no effect.')
+    parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect. No airing informationn collected if this is greater than 0.')
+    parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Default is plutotv.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. No offset needed during initial testing.')
     opts = parser.parse_args()
     
     #string agruments
@@ -331,7 +327,7 @@ if __name__ == '__main__':
                 episode_series_slug = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
             try:
-                episode_series_type = grid['channels'][x]['timelines'][y]['episode']['series']['type'] #episode series type
+                episode_series_type = grid['channels'][x]['timelines'][y]['episode']['series']['type'] #episode series type (possible values: tv, film, web-original, music-video, live, No information available)
             except KeyError as e:
                 episode_series_type = ''
                 keyErrors_full.append('program title: ' + grid['channels'][x]['timelines'][y]['title'] + ' channelName: ' + grid['channels'][x]['name'] + ' KeyError: ' + str(e))
@@ -534,8 +530,8 @@ if __name__ == '__main__':
                     xml += '\n\t\t<previously-shown />'
             else: #if program is premiere add the tag
                 xml += '\n\t\t<premiere />'
-                
-            if program_list[x]['episode_liveBroadcast'] == 'true':
+            
+            if program_list[x]['episode_liveBroadcast'] == True or program_list[x]['episode_series_type'] == 'live':
                 xml += '\n\t\t<live />'
             
             #finish
