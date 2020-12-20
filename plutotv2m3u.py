@@ -77,14 +77,30 @@ if __name__ == '__main__':
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv channels into m3u format.", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv.m3u'], help='Full destination filepath. Default is plutotv.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('-p', '--prefix', type=str, nargs=1, required=False, default=[''], help='Channel name prefix.')
+    parser.add_argument('-s', '--startNumber', type=int, nargs=1, required=False, default=[1], help='Start numbering here. For example 9000. If -k, --keepNumber is used then channel 2 would become channel 9002, otherwise the first channel number found would be 9000, second channel found would be 9001, etc.')
+    parser.add_argument('-k', '--keepNumber', action='store_true', required=False, help='Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.')
     opts = parser.parse_args()
     
     #string agruments
     destination = quote_remover(opts.file[0])
+    prefix = quote_remover(opts.prefix[0])
+    
+    #integer arguments
+    startNumber = opts.startNumber[0]
+    
+    #bool arguments
+    keepNumber = opts.keepNumber
+    
     print('file: ' + destination)
+    print('startNumber: ' + str(startNumber))
+    print('keepNumber: ' + str(keepNumber))
 
     #dictionary arrays to build
     channel_dict = {'data': []}
+
+    #arrays to build
+    channel_numbers = []
 
     #constants
     day = 24 * 60 * 60
@@ -104,8 +120,31 @@ if __name__ == '__main__':
     print(url)
     grid = load_json(url)
     
+    newNumber = startNumber
     x = 0
     for key in grid['channels']:
+        if keepNumber == False:
+            newNumber =+ x
+        elif keepNumber == True:
+            newNumber = startNumber + grid['channels'][x]['number']
+            
+            r = 0
+            index = 0
+            while r < len(channel_numbers):
+                if str(newNumber) == str(channel_numbers[r][0]):
+                    index = r
+                    s = len(channel_numbers[r])
+                    channel_numbers[r].append(str(newNumber) + '.' + str(s))
+                    print('Added sub channel: ' + channel_numbers[r][-1])
+                    newNumber = channel_numbers[r][-1]
+                    break
+                r += 1
+            if index == 0:
+                channel_numbers.append([str(newNumber)])
+                print('Added channel: ' + str(channel_numbers[-1][0]))
+
+        #print(channel_numbers)
+
         channel_dict['data'].append({
             'channelName': grid['channels'][x]['name'], #name
             'channelSlug': grid['channels'][x]['slug'], #slug
@@ -113,15 +152,15 @@ if __name__ == '__main__':
             'channelNumber': grid['channels'][x]['number'], #number
             'channelId': grid['channels'][x]['id'], #id
             'channelSummary': grid['channels'][x]['summary'], #summary
-            'channelImage': grid['channels'][x]['images'][0]['url'] }) #logo
-        
+            'channelImage': grid['channels'][x]['images'][0]['url'], #logo
+            'newNumber': newNumber })
         x += 1
     
     # remove duplicates
     channel_list = [i for n, i in enumerate(channel_dict['data']) if i not in channel_dict['data'][n + 1:]]
     print('Channels Found: ' + str(len(channel_list)+1))
     
-    # sort by Age (Ascending order)
+    # sort by channel number (Ascending order)
     channel_list.sort(key=get_number) #https://www.programiz.com/python-programming/methods/list/sort#:~:text=%20Python%20List%20sort%20%28%29%20%201%20sort,an%20optional%20argument.%20Setting%20reverse%20%3D...%20More%20
     #print(channel_list)
     
@@ -131,9 +170,11 @@ if __name__ == '__main__':
     x = 0
     while x < len(channel_list): #do this for each channel
         m3u += '\n#EXTINF:-1 tvg-ID="PLUTO.TV.' + channel_list[x]['channelSlug']
-        m3u += '" tvg-name="' + channel_list[x]['channelName']
+        m3u += '" CUID="' + str(channel_list[x]['channelId'])
+        m3u += '" tvg-chno="' + str(channel_list[x]['newNumber'])
+        m3u += '" tvg-name="' + prefix + channel_list[x]['channelName']
         m3u += '" tvg-logo="' + channel_list[x]['channelImage']
-        m3u += '" group-title="PLUTO USA",' + channel_list[x]['channelName']
+        m3u += '" group-title="PLUTO USA",' + prefix + channel_list[x]['channelName']
         
         number = str(channel_list[x]['channelNumber'])
         cid = str(channel_list[x]['channelId'])
@@ -142,7 +183,7 @@ if __name__ == '__main__':
         
         m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=web&deviceModel=web&sid=' + number + '&deviceId=' + cid + '&deviceVersion=DNT&appVersion=DNT&deviceDNT=0&userId=&advertisingId=&deviceLat=&deviceLon=&app_name=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=false'
 
-        print(channel_list[x]['channelSlug'] + ' will be added to the m3u.' + str(x+1) + '/' + str(len(channel_list)))
+        #print(channel_list[x]['channelSlug'] + ' will be added to the m3u.' + str(x+1) + '/' + str(len(channel_list)))
 
         x += 1
 
