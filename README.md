@@ -38,3 +38,9 @@ Arguments:
 Arguments:
 
 -f, --file      Full destination filepath. Default is plutotv.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory. Default: 'plutotv.m3u'
+
+-p, --prefix    Channel name prefix.
+
+-s, --startNumber   Start numbering here. For example 9000. If -k, --keepNumber is used then channel 2 would become channel 9002, otherwise the first channel number found would be 9000, second channel found would be 9001, etc.
+
+-k, --keepNumber    Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.
