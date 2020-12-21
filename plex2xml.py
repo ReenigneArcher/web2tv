@@ -369,7 +369,7 @@ if __name__ == '__main__':
                     'endsAt': find_between_split( tmp_airing[z], 'endsAt="', '"' ), #end time in unix
                     'premiere': find_between_split( tmp_airing[z], 'premiere="', '"' ), #1 for new airings
                     'videoResolution': find_between_split( tmp_airing[z], 'videoResolution="', '"' ), #video quality
-                    'channelTitle': find_between_split( tmp_airing[z], 'channelTitle="', '"' ), #vcn + short title
+                    'channelShortTitle': find_between_split( tmp_airing[z], 'channelShortTitle="', '"' ), #vcn + short title
                     'channelVcn': find_between_split( tmp_airing[z], 'channelVcn="', '"' )}) #vcn + short title
                 
                     channel_dict['data'].append({
@@ -395,7 +395,7 @@ if __name__ == '__main__':
     #start the xml file
     xml = '<?xml version="1.0" encoding="UTF-8"?>'
     xml += '\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
-    xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + 'generator-info-url=' + generator_info_url + '>'
+    xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + ' generator-info-url=' + generator_info_url + '>'
 
     x = 0
     while x < len(channel_list): #do this for each channel
@@ -417,7 +417,7 @@ if __name__ == '__main__':
             timeAdded = str(datetime.fromtimestamp(int(program_list[x]['addedAt']))).replace('-', '').replace(':', '').replace(' ', '')
             timeOriginal = program_list[x]['originallyAvailableAt'].replace('-', '').replace(':', '').replace('T', '').replace('Z', '')
             
-            xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="' + program_list[x]['channelTitle'].replace(' ', '.') + '">' #program,, start, and end time
+            xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLEX.TV.' + program_list[x]['channelShortTitle'].replace(' ', '.') + '">' #program,, start, and end time
             
             xml += '\n\t\t<desc lang="' + x_plex_language + '">' + program_list[x]['summary'] + '</desc>' #description/summary
             xml += '\n\t\t<length units="seconds">' + program_list[x]['duration'] + '</length>' #duration/length
@@ -462,7 +462,7 @@ if __name__ == '__main__':
                 xml += '\n\t\t<category lang="' + x_plex_language + '">' + channel_category[program_list[x]['channelVcn']] + '</category>' #music category
             except KeyError:
                 keyErrors_channelCategory.append(program_list[x]['channelVcn'])
-                errorDetails_chanelCategory.append('Vcn: ' + program_list[x]['channelVcn'] + ', ChannelTitle: ' + program_list[x]['channelTitle'])
+                errorDetails_chanelCategory.append('Vcn: ' + program_list[x]['channelVcn'] + ', channelShortTitle: ' + program_list[x]['channelShortTitle'])
             
             #content rating key
             #print(program_list[x]['contentRating'])
@@ -494,7 +494,7 @@ if __name__ == '__main__':
         
         x += 1
 
-    xml += '\n</tv>'
+    xml += '\n</tv>\n'
     print('xml is ready to write')
     #print(xml)
 
