@@ -6,6 +6,7 @@ import time
 from datetime import datetime, date
 import json
 import dateutil.parser
+import uuid
 
 if __name__ == '__main__':
     def quote_remover(string):
@@ -167,6 +168,8 @@ if __name__ == '__main__':
     #start the m3u file
     m3u = '#EXTM3U'
 
+    did = str(uuid.uuid4()) #https://docs.python.org/2.7/library/uuid.html
+
     x = 0
     while x < len(channel_list): #do this for each channel
         m3u += '\n#EXTINF:-1 tvg-ID="PLUTO.TV.' + channel_list[x]['channelSlug']
@@ -181,7 +184,7 @@ if __name__ == '__main__':
         #print(number)
         #print(cid)
         
-        m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=web&deviceModel=web&sid=' + number + '&deviceId=' + cid + '&deviceVersion=DNT&appVersion=DNT&deviceDNT=0&userId=&advertisingId=&deviceLat=&deviceLon=&app_name=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=false'
+        m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid=' + number + '&deviceId=' + did + '&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true'
 
         #print(channel_list[x]['channelSlug'] + ' will be added to the m3u.' + str(x+1) + '/' + str(len(channel_list)))
 
@@ -198,3 +201,4 @@ if __name__ == '__main__':
     print('m3u is being written')
     file_handle.close()
     print('m3u is being closed')
+    
