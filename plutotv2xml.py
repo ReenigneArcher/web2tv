@@ -392,7 +392,7 @@ if __name__ == '__main__':
     #start the xml file
     xml = '<?xml version="1.0" encoding="UTF-8"?>'
     xml += '\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
-    xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + 'generator-info-url=' + generator_info_url + '>'
+    xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + ' generator-info-url=' + generator_info_url + '>'
 
     x = 0
     while x < len(channel_list): #do this for each channel
@@ -402,7 +402,8 @@ if __name__ == '__main__':
         xml += '\n\t\t<display-name>' + str(channel_list[x]['channelNumber']) + '</display-name>'
         xml += '\n\t\t<display-name>' + channel_list[x]['channelId'] + '</display-name>'
         xml += '\n\t\t<display-name>' + channel_list[x]['channelHash'] + '</display-name>'
-        xml += '\n\t\t<icon src="' + channel_list[x]['channelImage'] + '" />'
+        if channel_list[x]['channelImage'] != '':
+            xml += '\n\t\t<icon src="' + channel_list[x]['channelImage'] + '" />'
         xml += '\n\t</channel>'
         print(channel_list[x]['channelSlug'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
         x += 1
@@ -536,7 +537,7 @@ if __name__ == '__main__':
             
         x += 1
 
-    xml += '\n</tv>'
+    xml += '\n</tv>\n'
     xml = xml.decode('unicode_escape').encode('utf-8')
     print('xml is ready to write')
     #print(xml)
