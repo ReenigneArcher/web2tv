@@ -77,22 +77,28 @@ if __name__ == '__main__':
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv channels into m3u format.", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 10.')
     parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv.m3u'], help='Full destination filepath. Default is plutotv.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.')
     parser.add_argument('-p', '--prefix', type=str, nargs=1, required=False, default=[''], help='Channel name prefix.')
     parser.add_argument('-s', '--startNumber', type=int, nargs=1, required=False, default=[1], help='Start numbering here. For example 9000. If -k, --keepNumber is used then channel 2 would become channel 9002, otherwise the first channel number found would be 9000, second channel found would be 9001, etc.')
     parser.add_argument('-k', '--keepNumber', action='store_true', required=False, help='Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.')
     opts = parser.parse_args()
     
     #string agruments
+    timezone = quote_remover(opts.timezone[0])
     destination = quote_remover(opts.file[0])
     prefix = quote_remover(opts.prefix[0])
     
     #integer arguments
+    epg_hours = opts.epgHours[0]
     startNumber = opts.startNumber[0]
     
     #bool arguments
     keepNumber = opts.keepNumber
     
+    print('hours: ' + str(epg_hours))
+    print('timezone: ' + timezone)
     print('file: ' + destination)
     print('startNumber: ' + str(startNumber))
     print('keepNumber: ' + str(keepNumber))
@@ -105,20 +111,23 @@ if __name__ == '__main__':
 
     #constants
     day = 24 * 60 * 60
+    hour = 60 * 60
     half_hour = 60 * 60 / 2
+    timezone = timezone[:-2] + ':' + timezone[-2:]
 
     now = time.time()
     now = int(now)
     now_30 = now - (now % half_hour) #go back to nearest 30 minutes
-    epg_begin = str(datetime.fromtimestamp(now_30)).replace(' ', 'T') + '-00:00'
+    epg_begin = str(datetime.fromtimestamp(now_30)).replace(' ', 'T') + timezone
 
-    epg_end = (day) + now_30 + half_hour
-    epg_end = str(datetime.fromtimestamp(epg_end)).replace(' ', 'T') + '-00:00'
+    epg_end = (epg_hours * hour) + now_30 + half_hour
+    epg_end = str(datetime.fromtimestamp(epg_end)).replace(' ', 'T') + timezone
 
     print('Loading Grid for PlutoTV')
     
     url = 'https://service-channels.clusters.pluto.tv/v1/guide?start=' + epg_begin + '&stop=' + epg_end
-    print(url)
+    print('url: ' + url)
+    
     grid = load_json(url)
     
     newNumber = startNumber
@@ -176,7 +185,8 @@ if __name__ == '__main__':
         m3u += '" CUID="' + str(channel_list[x]['channelId'])
         m3u += '" tvg-chno="' + str(channel_list[x]['newNumber'])
         m3u += '" tvg-name="' + prefix + channel_list[x]['channelName']
-        m3u += '" tvg-logo="' + channel_list[x]['channelImage']
+        if channel_list[x]['channelImage'] != '':
+            m3u += '" tvg-logo="' + channel_list[x]['channelImage']
         m3u += '" group-title="PLUTO USA",' + prefix + channel_list[x]['channelName']
         
         number = str(channel_list[x]['channelNumber'])
@@ -201,4 +211,3 @@ if __name__ == '__main__':
     print('m3u is being written')
     file_handle.close()
     print('m3u is being closed')
-    
