@@ -27,13 +27,13 @@ Arguments:
 # plutotv2xml
 Arguments:
 
-'-d', '--days', type=int, nargs=1, required=False, default=[1], help='Days of EPG to collect. Pluto.TV only provides roughtly 2 hours of EPG. Increasing this number will have little or no effect.'
-
-'-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect. No airing informationn collected if this is greater than 0.'
+'-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 10.'
 
 '-f', '--file', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Default is plutotv.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
 
-'-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. No offset needed during initial testing.'
+'-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used to correct times in final xml file. Not needed during initial testing.'
+
+'-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.'
 
 # nextpvr2m3u
 Arguments:
