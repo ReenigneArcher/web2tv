@@ -8,7 +8,6 @@ import json
 import dateutil.parser
 import cgi
 
-
 #xml constants
 source_info_url = '"https://pluto.tv"'
 source_info_name = '"pluto.tv"'
@@ -82,27 +81,26 @@ if __name__ == '__main__':
     def fix(text):
         text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
         return text
-
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[1], help='Days of EPG to collect. Pluto.TV only provides roughly 2 hours of EPG. Increasing this number will have little or no effect.')
-    parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect. No airing informationn collected if this is greater than 0.')
+    parser.add_argument('-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 10.')
     parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Default is plutotv.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
-    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. No offset needed during initial testing.')
+    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used to correct times in final xml file. Not needed during initial testing.')
+    parser.add_argument('-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.')
     opts = parser.parse_args()
     
     #string agruments
     offset = quote_remover(opts.offset[0])
+    timezone = quote_remover(opts.timezone[0])
     xml_destination = quote_remover(opts.file[0])
     
     #integer arguments
-    days_future = opts.days[0]
-    days_past = opts.pastdays[0]
+    epg_hours = opts.epgHours[0]
     
-    print('days: ' + str(days_future))
-    print('pastdays: ' + str(days_past))
+    print('hours: ' + str(epg_hours))
     print('offset: ' + offset)
+    print('timezone: ' + timezone)
     print('file: ' + xml_destination)
 
     #dictionary arrays to build
@@ -178,23 +176,22 @@ if __name__ == '__main__':
 
     #constants
     day = 24 * 60 * 60
+    hour = 60 * 60
     half_hour = 60 * 60 / 2
-    offset2 = offset[:-2] + ':' + offset[-2:]
-    
-    days_total = days_future + days_past #define the total number of days
+    timezone = timezone[:-2] + ':' + timezone[-2:]
 
     now = time.time()
     now = int(now)
     now_30 = now - (now % half_hour) #go back to nearest 30 minutes
-    epg_begin = now_30 - (days_past * day) #now - 30 minutes - past days
-    epg_begin = str(datetime.fromtimestamp(epg_begin)).replace(' ', 'T') + offset2
+    epg_begin = str(datetime.fromtimestamp(now_30)).replace(' ', 'T') + timezone
 
-    epg_end = (days_future * day) + now_30 + half_hour
-    epg_end = str(datetime.fromtimestamp(epg_end)).replace(' ', 'T') + offset2
+    epg_end = (epg_hours * hour) + now_30 + half_hour
+    epg_end = str(datetime.fromtimestamp(epg_end)).replace(' ', 'T') + timezone
 
     print('Loading Grid for PlutoTV')
     
     url = 'https://service-channels.clusters.pluto.tv/v1/guide?start=' + epg_begin + '&stop=' + epg_end
+    print('url: ' + url)
 
     grid = load_json(url)
     
