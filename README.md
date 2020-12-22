@@ -62,3 +62,5 @@ Arguments:
 '-s', '--startNumber', type=int, nargs=1, required=False, default=[1], help='Start numbering here. For example 9000. If -k, --keepNumber is used then channel 2 would become channel 9002, otherwise the first channel number found would be 9000, second channel found would be 9001, etc.'
 
 '-k', '--keepNumber', action='store_true', required=False, help='Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.'
+
+'--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
