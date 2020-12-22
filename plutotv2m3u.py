@@ -83,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--prefix', type=str, nargs=1, required=False, default=[''], help='Channel name prefix.')
     parser.add_argument('-s', '--startNumber', type=int, nargs=1, required=False, default=[1], help='Start numbering here. For example 9000. If -k, --keepNumber is used then channel 2 would become channel 9002, otherwise the first channel number found would be 9000, second channel found would be 9001, etc.')
     parser.add_argument('-k', '--keepNumber', action='store_true', required=False, help='Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.')
+    parser.add_argument('--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.')
     opts = parser.parse_args()
     
     #string agruments
@@ -96,6 +97,7 @@ if __name__ == '__main__':
     
     #bool arguments
     keepNumber = opts.keepNumber
+    streamlink = opts.streamlink
     
     print('hours: ' + str(epg_hours))
     print('timezone: ' + timezone)
@@ -178,6 +180,7 @@ if __name__ == '__main__':
     m3u = '#EXTM3U'
 
     did = str(uuid.uuid4()) #https://docs.python.org/2.7/library/uuid.html
+    sid = str(uuid.uuid4()) #https://docs.python.org/2.7/library/uuid.html
 
     x = 0
     while x < len(channel_list): #do this for each channel
@@ -189,12 +192,15 @@ if __name__ == '__main__':
             m3u += '" tvg-logo="' + channel_list[x]['channelImage']
         m3u += '" group-title="PLUTO USA",' + prefix + channel_list[x]['channelName']
         
-        number = str(channel_list[x]['channelNumber'])
-        cid = str(channel_list[x]['channelId'])
-        #print(number)
-        #print(cid)
-        
-        m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid=' + number + '&deviceId=' + did + '&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true'
+        if streamlink == True:
+            m3u += '\n' + 'https://pluto.tv/live-tv/' + channel_list[x]['channelSlug']
+        else:
+            #sid = str(channel_list[x]['channelNumber'])
+            cid = str(channel_list[x]['channelId'])
+            #print(number)
+            #print(cid)
+            
+            m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid=' + sid + '&deviceId=' + did + '&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true'
 
         #print(channel_list[x]['channelSlug'] + ' will be added to the m3u.' + str(x+1) + '/' + str(len(channel_list)))
 
