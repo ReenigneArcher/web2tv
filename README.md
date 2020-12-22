@@ -52,6 +52,8 @@ Arguments:
 
 '--pin', type=str, nargs=1, required=False, default=['0000'], help='Pin used to access NextPVR api. Default is 0000.'
 
+'--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
+
 # plutotv2m3u
 Arguments:
 
