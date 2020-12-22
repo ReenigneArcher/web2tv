@@ -83,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--ip', type=str, nargs=1, required=False, default=['127.0.0.1'], help='IP Address of NextPVR server. Default is 127.0.0.1')
     parser.add_argument('--port', type=int, nargs=1, required=False, default=[8866], help='Port number of NextPVR server. Default is 8866.')
     parser.add_argument('--pin', type=str, nargs=1, required=False, default=['0000'], help='Pin used to access NextPVR api. Default is 0000.')
+    parser.add_argument('--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.')
     opts = parser.parse_args()
     
     #string agruments
@@ -97,6 +98,7 @@ if __name__ == '__main__':
     
     #bool arguments
     keepNumber = opts.keepNumber
+    streamlink = opts.streamlink
 
     #blank variables to get later
     sid = ''
@@ -212,6 +214,11 @@ if __name__ == '__main__':
     # sort by channel number (Ascending order)
     channel_list.sort(key=get_number) #https://www.programiz.com/python-programming/methods/list/sort#:~:text=%20Python%20List%20sort%20%28%29%20%201%20sort,an%20optional%20argument.%20Setting%20reverse%20%3D...%20More%20
     #print(channel_list)
+
+    if streamlink == True:
+        url_prefix = 'httpstream://'
+    else:
+        url_prefix = ''
     
     #start the m3u file
     m3u = '#EXTM3U'
@@ -226,7 +233,7 @@ if __name__ == '__main__':
             m3u += '" tvg-logo="' + url + 'channel.icon&channel_id=' + str(channel_list[x]['channelId'])
         m3u += '" group-title="NextPVR",' + prefix + channel_list[x]['channelNumberFormated'] + ' ' + channel_list[x]['channelName']
         
-        m3u += '\n' + url_base + '/live?channel_id=' + str(channel_list[x]['channelId'])
+        m3u += '\n' + url_prefix + url_base + '/live?channel_id=' + str(channel_list[x]['channelId'])
 
         print(channel_list[x]['channelName'] + ' will be added to the m3u.' + str(x+1) + '/' + str(len(channel_list)))
 
