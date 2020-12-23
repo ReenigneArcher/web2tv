@@ -516,10 +516,10 @@ if __name__ == '__main__':
                     xml += '\n\t\t<rating system="' + rating_system[program_list[x]['episode_rating'].lower()] + '">' #rating system
                     xml += '\n\t\t\t<value>' + program_list[x]['episode_rating'] + '</value>' #rating
                     xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['episode_rating'].lower()] + '" />' #rating logo from dictionary
+                    xml += '\n\t\t</rating>' #end rating key
                 except KeyError:
                     keyErrors_contentRating.append(program_list[x]['episode_rating'])
                     errorDetails_contentRating.append('Title: ' + program_list[x]['episode_name'] + ', Channel: ' + program_list[x]['channelSlug'])
-                xml += '\n\t\t</rating>' #end rating key
             
             if program_list[x]['episode_firstAired'] != '': #if first aired is not blank add the premier
                 if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
