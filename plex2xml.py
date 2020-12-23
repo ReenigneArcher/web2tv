@@ -471,10 +471,10 @@ if __name__ == '__main__':
                     xml += '\n\t\t<rating system="' + rating_system[program_list[x]['contentRating'].lower()] + '">' #rating system
                     xml += '\n\t\t\t<value>' + program_list[x]['contentRating'] + '</value>' #rating
                     xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['contentRating'].lower()] + '" />' #rating logo from dictionary
+                    xml += '\n\t\t</rating>' #end rating key
                 except KeyError:
                     keyErrors_contentRating.append(program_list[x]['contentRating'])
                     errorDetails_contentRating.append('Title: ' + program_list[x]['title'] + ', GrandparentTitle: ' + program_list[x]['grandparentTitle'])
-                xml += '\n\t\t</rating>' #end rating key
             
             if program_list[x]['premiere'] == '0': #if not premiere add the previously shown tag
                 if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
