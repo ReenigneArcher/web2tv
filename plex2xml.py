@@ -4,28 +4,17 @@ import argparse
 import urllib2
 import time
 from datetime import datetime, date
+import json
+import cgi
 
 #url variables
 type = '1%2C4'
-#x_plex_product = 'Plex%20Web'
-#x_plex_version = '4.48.1'
-#x_plex_client_identifer = ''
-#x_plex_platform = 'Firefox'
-#x_plex_platform_version = '83.0'
-#x_plex_sync_version = '2'
-#x_plex_features = 'external-media%2Cindirect-media'
-#x_plex_model = 'hosted'
-#x_plex_device = 'Windows'
-#x_plex_device_screen_resolution = '1366x418%2C1366x768'
-#x_plex_drm = 'widevine'
-#x_plex_text_format = 'plain'
-#x_plex_provider_version = '1.3'
 
 #xml constants
 source_info_url = '"https://epg.provider.plex.tv/"'
 source_info_name = '"plex.tv"'
-generator_info_name = '"plex2xml"'
-generator_info_url = '"https://github.com/ReenigneArcher/plex2xml"'
+generator_info_name = '"web2tv"'
+generator_info_url = '"https://github.com/ReenigneArcher/web2tv"'
 
 if __name__ == '__main__':
     def quote_remover(string):
@@ -75,6 +64,18 @@ if __name__ == '__main__':
         URL_Source = URL_Source.replace('\t', '') #remove tabs
         
         return URL_Source
+    
+    def load_json(url):
+        req = urllib2.Request(url)
+        req.add_header("Accept",'application/json')
+        opener = urllib2.build_opener()
+        f = opener.open(req)
+        result = json.loads(f.read())
+        return result
+    
+    def fix(text):
+        text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
+        return text
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert plex livetv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
@@ -323,7 +324,7 @@ if __name__ == '__main__':
 
     x = 0
     while x < days_total: #do this for each day
-        print('Loading Grid for Day: ' + str(x+1) + '/' + str(days_total))
+        print('Loading Grid for PlexTV, day: ' + str(x+1) + '/' + str(days_total))
         if x == 0:
             interval_a = int(epg_begin)
         else:
@@ -333,57 +334,110 @@ if __name__ == '__main__':
         #url = 'https://epg.provider.plex.tv/grid?type=' + type + '&sort=beginsAt&endsAt%3E=' + str(interval_a) + '&beginsAt%3C=' + str(interval_b) + '&X-Plex-Product=' + x_plex_product + '&X-Plex-Version=' + x_plex_version + '&X-Plex-Client-Identifier=' + x_plex_client_identifer + '&X-Plex-Platform=' + x_plex_platform + '&X-Plex-Platform-Version=' + x_plex_platform_version + '&X-Plex-Sync-Version=' + x_plex_sync_version + '&X-Plex-Features=' + x_plex_features + '&X-Plex-Model=' + x_plex_model + '&X-Plex-Device=' + x_plex_device + '&X-Plex-Device-Screen-Resolution=' + x_plex_device_screen_resolution + '&X-Plex-Token=' + x_plex_token + '&X-Plex-Language=' + x_plex_language + '&X-Plex-Drm=' + x_plex_drm + '&X-Plex-Text-Format=' + x_plex_text_format + '&X-Plex-Provider-Version=' + x_plex_provider_version
         url = 'https://epg.provider.plex.tv/grid?type=' + type + '&sort=beginsAt&endsAt%3E=' + str(interval_a) + '&beginsAt%3C=' + str(interval_b) + '&X-Plex-Token=' + x_plex_token + '&X-Plex-Language=' + x_plex_language
 
-        #print('x[' + str(x) + ']: ' + url)
-        grid_page = load_url(url)
+        print('url[' + str(x+1) + ']: ' + url)
+        grid = load_json(url)
         
-        tmp_program = GetListOfSubstrings( grid_page,    '<Video guid="', '</Video>' )
-        #print(tmp_program)
-        if len(tmp_program) > 0:
-            y = 0
-            while y < len(tmp_program):
-                #print('y: ' + str(y))
-                tmp_airing = GetListOfSubstrings( tmp_program[y], '<Media ', '</Media>' )
-                
-                z = 0
-                while z < len(tmp_airing):
-                    #print('z: ' + str(z))
+        #with open('plex_xml_' + str(x) + '.json', 'w') as write_file:
+        #    json.dump(grid_page, write_file, indent=4)
+        
+        y = 0
+        for key in grid['MediaContainer']['Metadata']:
+            type = fix(grid['MediaContainer']['Metadata'][y]['type'])
+            if type == 'movie':
+                try:
+                    thumb = fix(grid['MediaContainer']['Metadata'][y]['thumb'])
+                except KeyError as e:
+                    thumb = ''
+                title = fix(grid['MediaContainer']['Metadata'][y]['title'])
+                subTitle = ''
+                grandparentKey = ''
+                grandparentType = ''
+                grandparentGuid = ''
+                parentIndex = ''
+                index = ''
+                grandparentRatingKey = ''
+            elif type == 'episode':
+                thumb = fix(grid['MediaContainer']['Metadata'][y]['grandparentThumb'])
+                title = fix(grid['MediaContainer']['Metadata'][y]['grandparentTitle'])
+                subTitle = fix(grid['MediaContainer']['Metadata'][y]['title'])
+                grandparentKey = fix(grid['MediaContainer']['Metadata'][y]['grandparentKey'])
+                grandparentType = fix(grid['MediaContainer']['Metadata'][y]['grandparentType'])
+                grandparentGuid = fix(grid['MediaContainer']['Metadata'][y]['grandparentGuid'])
+                parentIndex = grid['MediaContainer']['Metadata'][y]['parentIndex']
+                try:
+                    index = grid['MediaContainer']['Metadata'][y]['index']
+                except KeyError as e:
+                    index = ''
+                grandparentRatingKey = fix(grid['MediaContainer']['Metadata'][y]['grandparentRatingKey'])
+            addedAt = grid['MediaContainer']['Metadata'][y]['addedAt']
+            skipParent = grid['MediaContainer']['Metadata'][y]['skipParent']
+            year = grid['MediaContainer']['Metadata'][y]['year']
+            ratingKey = fix(grid['MediaContainer']['Metadata'][y]['ratingKey'])
+            try:
+                summary = fix(grid['MediaContainer']['Metadata'][y]['summary'])
+            except KeyError as e:
+                summary = ''
+            key = fix(grid['MediaContainer']['Metadata'][y]['key'])
+            originallyAvailableAt = fix(grid['MediaContainer']['Metadata'][y]['originallyAvailableAt'])
+            #duration = grid['MediaContainer']['Metadata'][y]['duration']
+            guid = fix(grid['MediaContainer']['Metadata'][y]['guid'])
+            userState = grid['MediaContainer']['Metadata'][y]['userState']
+            try:
+                contentRating = fix(grid['MediaContainer']['Metadata'][y]['contentRating'])
+            except KeyError as e:
+                contentRating = 'NR'
+        
+            z = 0
+            for key in grid['MediaContainer']['Metadata'][y]['Media']:
+                origin = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['origin'])
+                onAir = grid['MediaContainer']['Metadata'][y]['Media'][z]['onAir']
+                beginsAt = grid['MediaContainer']['Metadata'][y]['Media'][z]['beginsAt']
+                protocol = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['protocol'])
+                premiere = grid['MediaContainer']['Metadata'][y]['Media'][z]['premiere']
+                endsAt = grid['MediaContainer']['Metadata'][y]['Media'][z]['endsAt']
+                channelVcn = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelVcn'])
+                channelIdentifier = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelIdentifier'])
+                channelTitle = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelTitle'])
+                channelThumb = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelThumb'])
+                duration = grid['MediaContainer']['Metadata'][y]['Media'][z]['duration']
+                channelArt = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelArt'])
+                videoResolution =  fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['videoResolution'])
+                id = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['id'])
+                channelShortTitle = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelShortTitle'])
+        
+                if duration > 0: #only add programs with a defined duration
                     program_dict['data'].append({
-                    'ratingKey': find_between_split( tmp_program[y], 'ratingKey="', '"' ), #type of episode number?
-                    'title': find_between_split( tmp_program[y], 'title="', '"' ), #episode/movie title... if episode this is sub-title
-                    'grandparentTitle': find_between_split( tmp_program[y], 'grandparentTitle="', '"' ), #episode/movie title... if episode this is sub-title
-                    'summary': find_between_split( tmp_program[y], 'summary="', '"' ), #description
-                    'addedAt': find_between_split( tmp_program[y], 'addedAt="', '"' ), #date... need to format as YYYYMMDDHHMMSS -HHMM ... can omit unknowns
-                    'originallyAvailableAt': find_between_split( tmp_program[y], 'originallyAvailableAt="', '"' ), #previously shown start time... need to format as YYYYMMDDHHMMSS -HHMM ... can omit unknowns
-                    'thumb': find_between_split( tmp_program[y], 'thumb="', '"' ), #poster
-                    'grandparentThumb': find_between_split( tmp_program[y], 'grandparentThumb="', '"' ), #poster for episodes
-                    'type': find_between_split( tmp_program[y], 'type="', '"' ), #episode or movie... if episode we'll build the episode number... if movie we'll add the Movie category
-                    'grandparentType': find_between_split( tmp_program[y], 'grandparentType="', '"' ), #show...
-                    'parentIndex': find_between_split( tmp_program[y], 'parentIndex="', '"' ), #season number
-                    'index': find_between_split( tmp_program[y], 'index="', '"' ), #episode number
-                    'contentRating': find_between_split( tmp_program[y], 'contentRating="', '"' ), #content rating of the program... TV-PG for example
-                    'year': find_between_split( tmp_program[y], 'year="', '"' ), #content rating of the program... TV-PG for example
+                    'ratingKey': ratingKey,
+                    'title': title,
+                    'subTitle': subTitle,
+                    'summary': summary,
+                    'addedAt': addedAt,
+                    'originallyAvailableAt': originallyAvailableAt, #previously shown start time... need to format as YYYYMMDDHHMMSS -HHMM ... can omit unknowns
+                    'thumb': thumb,
+                    'type': type,
+                    'grandparentType': grandparentType,
+                    'parentIndex': parentIndex, #season number
+                    'index': index, #episode number
+                    'contentRating': contentRating, #content rating of the program... TV-PG for example
+                    'year': year, #content rating of the program... TV-PG for example
+                    'beginsAt': beginsAt, #start time in unix
+                    'duration': duration, #duration
+                    'endsAt': endsAt, #end time in unix
+                    'premiere': premiere, #1 for new airings
+                    'videoResolution': videoResolution, #video quality
+                    'channelShortTitle': channelShortTitle, #short title
+                    'channelVcn': channelVcn }) #vcn
+            
+                channel_dict['data'].append({
+                'channelTitle': channelTitle, #vcn + short title
+                'channelIdentifier': channelIdentifier, #key
+                'channelShortTitle': channelShortTitle, #friendly name
+                'channelVcn': channelVcn, #number
+                'channelArt': channelArt, #number
+                'channelThumb': channelThumb}) #icon
                 
-                    #use tmp_airing and Z index for the following
-                    'beginsAt': find_between_split( tmp_airing[z], 'beginsAt="', '"' ), #start time in unix
-                    'duration': find_between_split( tmp_airing[z], 'duration="', '"' ), #duration
-                    'endsAt': find_between_split( tmp_airing[z], 'endsAt="', '"' ), #end time in unix
-                    'premiere': find_between_split( tmp_airing[z], 'premiere="', '"' ), #1 for new airings
-                    'videoResolution': find_between_split( tmp_airing[z], 'videoResolution="', '"' ), #video quality
-                    'channelShortTitle': find_between_split( tmp_airing[z], 'channelShortTitle="', '"' ), #vcn + short title
-                    'channelVcn': find_between_split( tmp_airing[z], 'channelVcn="', '"' )}) #vcn + short title
-                
-                    channel_dict['data'].append({
-                    'channelTitle': find_between_split( tmp_airing[z], 'channelTitle="', '"' ), #vcn + short title
-                    'channelIdentifier': find_between_split( tmp_airing[z], 'channelIdentifier="', '"' ), #key
-                    'channelShortTitle': find_between_split( tmp_airing[z], 'channelShortTitle="', '"' ), #friendly name
-                    'channelVcn': find_between_split( tmp_airing[z], 'channelVcn="', '"' ), #number
-                    'channelThumb': find_between_split( tmp_airing[z], 'channelThumb="', '"' )}) #icon
-                    
-                    #channel_dict['data'] = [i for n, i in enumerate(channel_dict['data']) if i not in channel_dict['data'][n + 1:]]
-                    #program_dict['data'] = [i for n, i in enumerate(program_dict['data']) if i not in program_dict['data'][n + 1:]]
-                    z += 1
-                
-                y += 1
+                z += 1
+            y += 1
         x += 1
 
     # remove duplicates
@@ -411,86 +465,82 @@ if __name__ == '__main__':
 
     x = 0
     while x < len(program_list): #do this for each program
-        if program_list[x]['duration'] != '0': #skip programs which are 0 length
-            timeStart = str(datetime.fromtimestamp(int(program_list[x]['beginsAt']))).replace('-', '').replace(':', '').replace(' ', '')
-            timeEnd = str(datetime.fromtimestamp(int(program_list[x]['endsAt']))).replace('-', '').replace(':', '').replace(' ', '')
-            timeAdded = str(datetime.fromtimestamp(int(program_list[x]['addedAt']))).replace('-', '').replace(':', '').replace(' ', '')
-            timeOriginal = program_list[x]['originallyAvailableAt'].replace('-', '').replace(':', '').replace('T', '').replace('Z', '')
-            
-            xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLEX.TV.' + program_list[x]['channelShortTitle'].replace(' ', '.') + '">' #program,, start, and end time
-            
-            xml += '\n\t\t<desc lang="' + x_plex_language + '">' + program_list[x]['summary'] + '</desc>' #description/summary
-            xml += '\n\t\t<length units="seconds">' + program_list[x]['duration'] + '</length>' #duration/length
-            if timeAdded != "": #if timeAdded is not blank
-                xml += '\n\t\t<date>' + timeAdded + ' ' + offset + '</date>' #time added to guide
-            elif program_list[x]['year'] != "": #else if year is not blank
-                xml += '\n\t\t<date>' + program_list[x]['year'] + '</date>' #year added to guide
+        timeStart = str(datetime.fromtimestamp(int(program_list[x]['beginsAt']))).replace('-', '').replace(':', '').replace(' ', '')
+        timeEnd = str(datetime.fromtimestamp(int(program_list[x]['endsAt']))).replace('-', '').replace(':', '').replace(' ', '')
+        timeAdded = str(datetime.fromtimestamp(int(program_list[x]['addedAt']))).replace('-', '').replace(':', '').replace(' ', '')
+        timeOriginal = program_list[x]['originallyAvailableAt'].replace('-', '').replace(':', '').replace('T', '').replace('Z', '')
+        
+        xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLEX.TV.' + program_list[x]['channelShortTitle'].replace(' ', '.') + '">' #program,, start, and end time
+        
+        xml += '\n\t\t<title lang="' + x_plex_language + '">' + program_list[x]['title'] + '</title>' #title
+        print(program_list[x]['title'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
+        
+        xml += '\n\t\t<desc lang="' + x_plex_language + '">' + program_list[x]['summary'] + '</desc>' #description/summary
+        xml += '\n\t\t<length units="seconds">' + str(program_list[x]['duration']) + '</length>' #duration/length
+        if timeOriginal != "": #if timeOriginal is not blank
+            xml += '\n\t\t<date>' + timeOriginal + ' ' + offset + '</date>' #date
+        elif str(program_list[x]['year']) != "": #else if year is not blank
+            xml += '\n\t\t<date>' + str(program_list[x]['year']) + '</date>' #year
 
-            if program_list[x]['type'] == 'episode':
-                xml += '\n\t\t<title lang="' + x_plex_language + '">' + program_list[x]['grandparentTitle'] + '</title>' #title
-                print(program_list[x]['grandparentTitle'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
-                if program_list[x]['title'] != program_list[x]['grandparentTitle']: #if not equal
-                    xml += '\n\t\t<sub-title lang="' + x_plex_language + '">' + program_list[x]['title'] + '</sub-title>' #sub-title/tagline
-                xml += '\n\t\t<icon src="' + program_list[x]['grandparentThumb'] + '" />' #thumb/icon
-                
-                #episode numbering
-                if program_list[x]['parentIndex'] != '':
-                    if program_list[x]['index'] != '':
-                        if int(program_list[x]['parentIndex']) < 10:
-                            num_season = '0' + program_list[x]['parentIndex']
-                        else:
-                            num_season = program_list[x]['parentIndex']
-                        if int(program_list[x]['index']) < 10:
-                            num_episode = '0' + program_list[x]['index']
-                        else:
-                            num_episode = program_list[x]['index']
-                        xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                        xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                        indexSeason = int(program_list[x]['parentIndex'])
-                        indexSeason -= 1
-                        indexEpisode = int(program_list[x]['index'])
-                        indexEpisode -= 1
-                        xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '</episode-num>' #episode number
-                xml += '\n\t\t<episode-num system="plex">' + program_list[x]['ratingKey'] + '</episode-num>' #episode number
-                
-            elif program_list[x]['type'] == 'movie':
-                xml += '\n\t\t<title lang="' + x_plex_language + '">' + program_list[x]['title'] + '</title>' #title
-                print(program_list[x]['title'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
-                xml += '\n\t\t<icon src="' + program_list[x]['thumb'] + '" />' #thumb/icon
+        if program_list[x]['type'] == 'episode':
             
+            if program_list[x]['title'] != program_list[x]['subTitle'] and program_list[x]['subTitle'] != '': #if not equal
+                xml += '\n\t\t<sub-title lang="' + x_plex_language + '">' + program_list[x]['subTitle'] + '</sub-title>' #sub-title/tagline
+            xml += '\n\t\t<icon src="' + program_list[x]['thumb'] + '" />' #thumb/icon
+            
+            #episode numbering
+            if program_list[x]['parentIndex'] != '':
+                if program_list[x]['index'] != '':
+                    if int(program_list[x]['parentIndex']) < 10:
+                        num_season = '0' + str(program_list[x]['parentIndex'])
+                    else:
+                        num_season = str(program_list[x]['parentIndex'])
+                    if int(program_list[x]['index']) < 10:
+                        num_episode = '0' + str(program_list[x]['index'])
+                    else:
+                        num_episode = str(program_list[x]['index'])
+                    xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                    xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                    indexSeason = int(program_list[x]['parentIndex'])
+                    indexSeason -= 1
+                    indexEpisode = int(program_list[x]['index'])
+                    indexEpisode -= 1
+                    xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '</episode-num>' #episode number
+            xml += '\n\t\t<episode-num system="plex">' + program_list[x]['ratingKey'] + '</episode-num>' #episode number
+        
+        try:
+            xml += '\n\t\t<category lang="' + x_plex_language + '">' + channel_category[program_list[x]['channelVcn']] + '</category>' #music category
+        except KeyError:
+            keyErrors_channelCategory.append(program_list[x]['channelVcn'])
+            errorDetails_chanelCategory.append('Vcn: ' + program_list[x]['channelVcn'] + ', channelShortTitle: ' + program_list[x]['channelShortTitle'])
+        
+        #content rating key
+        #print(program_list[x]['contentRating'])
+        if program_list[x]['contentRating'] != '': #if not blank
             try:
-                xml += '\n\t\t<category lang="' + x_plex_language + '">' + channel_category[program_list[x]['channelVcn']] + '</category>' #music category
+                xml += '\n\t\t<rating system="' + rating_system[program_list[x]['contentRating'].lower()] + '">' #rating system
+                xml += '\n\t\t\t<value>' + program_list[x]['contentRating'] + '</value>' #rating
+                xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['contentRating'].lower()] + '" />' #rating logo from dictionary
+                xml += '\n\t\t</rating>' #end rating key
             except KeyError:
-                keyErrors_channelCategory.append(program_list[x]['channelVcn'])
-                errorDetails_chanelCategory.append('Vcn: ' + program_list[x]['channelVcn'] + ', channelShortTitle: ' + program_list[x]['channelShortTitle'])
-            
-            #content rating key
-            #print(program_list[x]['contentRating'])
-            if program_list[x]['contentRating'] != '': #if not blank
-                try:
-                    xml += '\n\t\t<rating system="' + rating_system[program_list[x]['contentRating'].lower()] + '">' #rating system
-                    xml += '\n\t\t\t<value>' + program_list[x]['contentRating'] + '</value>' #rating
-                    xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['contentRating'].lower()] + '" />' #rating logo from dictionary
-                    xml += '\n\t\t</rating>' #end rating key
-                except KeyError:
-                    keyErrors_contentRating.append(program_list[x]['contentRating'])
-                    errorDetails_contentRating.append('Title: ' + program_list[x]['title'] + ', GrandparentTitle: ' + program_list[x]['grandparentTitle'])
-            
-            if program_list[x]['premiere'] == '0': #if not premiere add the previously shown tag
-                if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
-                    xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
-                else: #else don't add start time to the tag
-                    xml += '\n\t\t<previously-shown />'
-            elif program_list[x]['premiere'] == '1': #if program is premiere add the tag
-                xml += '\n\t\t<premiere />'
-            
-            #add the video quality
-            xml += '\n\t\t<video>'
-            xml += '\n\t\t\t<quality>' + program_list[x]['videoResolution'] + 'p</quality>'
-            xml += '\n\t\t</video>'
-            
-            #finish
-            xml += '\n\t</programme>'
+                keyErrors_contentRating.append(program_list[x]['contentRating'])
+                errorDetails_contentRating.append('Title: ' + program_list[x]['title'] + ', GrandparentTitle: ' + program_list[x]['grandparentTitle'])
+        
+        if program_list[x]['premiere'] == False: #if not premiere add the previously shown tag
+            if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
+                xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
+            else: #else don't add start time to the tag
+                xml += '\n\t\t<previously-shown />'
+        elif program_list[x]['premiere'] == True: #if program is premiere add the tag
+            xml += '\n\t\t<premiere />'
+        
+        #add the video quality
+        xml += '\n\t\t<video>'
+        xml += '\n\t\t\t<quality>' + program_list[x]['videoResolution'] + 'p</quality>'
+        xml += '\n\t\t</video>'
+        
+        #finish
+        xml += '\n\t</programme>'
         
         x += 1
 
@@ -518,111 +568,3 @@ if __name__ == '__main__':
         print(errorDetails_chanelCategory)
         print('Submit an issue on github so they can be added.')
 
-'''
-info we need for each channel
--channel id (as number + text)
--display-name (as number + text)
--display-name (as number)
--display-name (as text)
--icon src (as url to a png file)
-
-    <channel id="ch_id">
-        <display-name>ch_d2</display-name>
-        <display-name>ch_d0</display-name>
-        <display-name>ch_d1</display-name>
-        <icon src="ch_ico" />
-    </channel>
-
-'''
-
-'''
-info we need for each program
--start (YYYYMMDDHHMMSS + offset)
--stop (YYYYMMDDHHMMSS + offset)
--channel (channel id)
--title
-
-    <programme start="YYYYMMDDHHMMSS + offset" stop="YYYYMMDDHHMMSS + offset" channel="ch_id">
-        <title lang="en">pr_title</title>
-        <sub-title lang="en">pr_subtitle</sub-title>
-        <desc lang="en">pr_desc</desc>
-        <date>pr_YYYY or pr_YYYYMMDD</date>
-        <credits>
-            <actor>pr_actor</actor>
-            <director>pr_director</director>
-            <producer>pr_producer</producer>
-            <presenter>pr_presenter</presenter>
-        </credits>
-        <category lang="en">pr_cat</category>
-        <length units="minutes">pr_length</length>
-        <icon src="pr_ico" />
-        <url>pr_url</url>
-        <country>US</country>
-        <episode-num system="common">S32E10</episode-num>
-        <episode-num system="plex">ratingKey</episode-num>
-        <episode-num system="onscreen">S32E10</episode-num>
-        <episode-num system="xmltv_ns">31.9.</episode-num>
-        <new /> #first episode of a show ever
-        <premiere /> #plex shows as new episode?
-        <previously-shown start="YYYYMMDDHHMMSS" />
-        <live />
-        <last-chance /> #never on air again after this
-        <subtitles type="teletext" />
-        <video>
-            <quality>720p</quality>
-        </video>
-        <rating system="pr_rating_system">
-            <value>pr_rating</value>
-            <icon src="rating_symbol.png" />
-        </rating>
-    </programme>
-
-pr_cat (Family, Movie, News, Sports, Talk)
-pr_rating (TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA)
-pr_rating_system (VCHIP, MPAA)
-
-https://github.com/XMLTV/xmltv/blob/master/xmltv.dtd
-'''
-
-'''
-plex xml to tvg xml notes
-
--guid = plex url
--key = plex value
-ratingKey = use as form of episode number
-summary = description
-type = type of program (episode, movie)
-thumb = program icon
-addedAt = added to guide at this unix time... date
--duration = duration in seconds?
--userState = 0 or 1... unknown?
-title = show or movie title
-grandparentTitle = show title (episodes only)
-grandparentType = type (show) (episodes only)
-grandparentThumb = show icon (episodes only)
--grandparentRatingKey = plex value (episodes only)
--grandparentGuid = plex url (episodes only)
--grandparentKey = plex value (episodes only)
-index = episode number (episodes only)
-parentIndex = season number (episodes only)
--skipParent = 0 or 1... unknown
-contentRating = rating
-originallyAvailableAt = release date
-year = release year
-beginsAt = unix time of program start
-duration = duration in seconds
-endsAt = unix time of program end
--id = unknown
--onAir = 0 or 1... playing now
-premiere = 0 or 1... previous airing is 0, new airing is 1
-videoResolution = video height in pixels
--origin = guide source (livetv...)
--channelArt = channel fanart
-channelIdentifier = unknown
-channelShortTitle = channel name
-channelThumb = channel icon
-channelTitle = channel id
-channelVcn = channel number
--container = stream container
--protocol = stream protocol
-'''
