@@ -12,11 +12,11 @@ This does not work in python 3 yet. If anyone would like to review the code to g
 # plex2xml
 Arguments:
 
-'-t', '--token', type=str, nargs=1, required=True, help='Token is required. To obtain token open plex in a Firefox and login. Then right click the page and then click "Inspect Element". Go to the network tab of the inspector. Open the Live TV (From Plex) section. Now sort the inspector by domain and look for the domain that is "epg.provider.plex.tv". Double click the file that begins with grid?. The token is found in the url of this page.'
+'-t', '--token', type=str, nargs=1, required=True, help='Token is required. Follow Plex instructions for finding the token. https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/#toc-0'
 
-'-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of EPG to collect.'
+'-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of EPG to collect. Max if 21.'
 
-'-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect.'
+'-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect. Max is 1.'
 
 '-l', '--language', type=str, nargs=1, required=False, default=['en'], help='Plex language... Get from url same as token.'
 
