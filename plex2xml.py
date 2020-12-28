@@ -79,9 +79,9 @@ if __name__ == '__main__':
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert plex livetv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-t', '--token', type=str, nargs=1, required=True, help='Token is required. To obtain token open plex in a Firefox and login. Then right click the page and then click "Inspect Element". Go to the network tab of the inspector. Open the Live TV (From Plex) section. Now sort the inspector by domain and look for the domain that is "epg.provider.plex.tv". Double click the file that begins with grid?. The token is found in the url of this page.')
-    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of EPG to collect.')
-    parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect.')
+    parser.add_argument('-t', '--token', type=str, nargs=1, required=True, help='Token is required. Follow Plex instructions for finding the token. https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/#toc-0')
+    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of EPG to collect. Max if 21.')
+    parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect. Max is 1.')
     parser.add_argument('-l', '--language', type=str, nargs=1, required=False, default=['en'], help='Plex language... Get from url same as token.')
     parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plex2xml.xml'], help='Full destination filepath. Default is plex2xml.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
     parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.')
@@ -95,7 +95,11 @@ if __name__ == '__main__':
     
     #integer arguments
     days_future = opts.days[0]
+    if days_future > 21:
+        days_future = 21
     days_past = opts.pastdays[0]
+    if days_past > 1:
+        days_past = 1
     
     print('token: ' + x_plex_token)
     print('language: ' + x_plex_language)
