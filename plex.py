@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import urllib2
 import time
 from datetime import datetime, date
-import json
 import cgi
+import requests
 
 #url variables
 type = '1%2C4'
@@ -26,13 +25,9 @@ if __name__ == '__main__':
             string = string
         return string
     
-    def load_json(url):
-        req = urllib2.Request(url)
-        req.add_header("Accept",'application/json')
-        opener = urllib2.build_opener()
-        f = opener.open(req)
-        result = json.loads(f.read())
-        return result
+    def load_json(url: str):
+        res = requests.get(url=url, headers={'Accept': 'application/json'})
+        return res.json()
     
     def fix(text):
         text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import urllib2
+import requests
 import time
 from datetime import datetime, date
 import json
@@ -50,25 +50,18 @@ if __name__ == '__main__':
                 continueloop=0
         return MyList
 
-    def load_url(url):
-        URL_Req = urllib2.Request(url)
-        
-        try:
-            URL_Response = urllib2.urlopen(URL_Req)
-            URL_Source = URL_Response.read()
-        except urllib2.HTTPError as e: #https://www.programcreek.com/python/example/68989/requests.HTTPError
-            URL_Source = ""
-        
-        URL_Source = URL_Source.replace('\t', '') #remove tabs
-        
-        return URL_Source
-    
-    def load_json(url):
-        req = urllib2.Request(url)
-        opener = urllib2.build_opener()
-        f = opener.open(req)
-        result = json.loads(f.read())
-        return result
+
+    def load_url(url: str):
+        url_source = ""
+        response = requests.get(url=url)
+        if response:
+            url_source = response.text
+        return url_source.replace('\t', '')  # remove tabs
+
+
+    def load_json(url: str):
+        response = requests.get(url=url)
+        return response.json()
     
     def isotime_convert(iso_time):
         time = dateutil.parser.isoparse(iso_time) #https://stackoverflow.com/a/15228038/11214013

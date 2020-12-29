@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import urllib2
+import requests
 
 if __name__ == '__main__':
     def quote_remover(string):
@@ -26,8 +26,8 @@ if __name__ == '__main__':
     protocol = quote_remover(opts.protocol[0])
     
     
-    if input.startswith('http') == True: #https://www.tutorialspoint.com/python/string_startswith.htm
-        data = urllib2.urlopen(input) #https://stackoverflow.com/a/1393367/11214013
+    if input.startswith('http'): # https://www.tutorialspoint.com/python/string_startswith.htm
+        data = requests.get(url=input).text
     else:
         inputFile = open (input, 'r')
         data = inputFile.readlines()
