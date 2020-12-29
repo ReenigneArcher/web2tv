@@ -84,7 +84,7 @@ if __name__ == '__main__':
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 10.')
+    parser.add_argument('-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 12.')
     parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Default is plutotv.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
     parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used to correct times in final xml file. Not needed during initial testing.')
     parser.add_argument('-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.')
@@ -97,6 +97,8 @@ if __name__ == '__main__':
     
     #integer arguments
     epg_hours = opts.epgHours[0]
+    if epg_hours > 12:
+        epg_hours = 12
     
     print('hours: ' + str(epg_hours))
     print('offset: ' + offset)
@@ -442,7 +444,7 @@ if __name__ == '__main__':
             
             if program_list[x]['episode_name'] != program_list[x]['episode_series_name']: #if not equal
                 xml += '\n\t\t<sub-title lang="' + 'en' + '">' + program_list[x]['episode_name'] + '</sub-title>' #sub-title/tagline
-            xml += '\n\t\t<icon src="' + program_list[x]['episode_series_featuredImage_path'] + '" />' #thumb/icon
+            xml += '\n\t\t<icon src="' + program_list[x]['episode_poster_path'] + '" />' #thumb/icon
             
             #print(program_list[x]['episode_series_type'])
             if program_list[x]['episode_series_type'] == 'tv':
@@ -501,7 +503,7 @@ if __name__ == '__main__':
                         indexSeason -= 1
                         indexEpisode = int(episode)
                         indexEpisode -= 1
-                        xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '</episode-num>' #episode number
+                        xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '.</episode-num>' #episode number
                 xml += '\n\t\t<episode-num system="pluto.tv.number">' + str(program_list[x]['episode_number']) + '</episode-num>' #episode number
                 xml += '\n\t\t<episode-num system="pluto.tv.slug">' + program_list[x]['episode_slug'] + '</episode-num>' #episode number
                 xml += '\n\t\t<episode-num system="pluto.tv.id">' + program_list[x]['episode_id'] + '</episode-num>' #episode number
