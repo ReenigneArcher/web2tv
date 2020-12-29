@@ -342,7 +342,7 @@ if __name__ == '__main__':
         grid = load_json(url)
         
         #with open('plex_xml_' + str(x) + '.json', 'w') as write_file:
-        #    json.dump(grid_page, write_file, indent=4)
+        #    json.dump(grid, write_file, indent=4)
         
         y = 0
         for key in grid['MediaContainer']['Metadata']:
@@ -361,7 +361,13 @@ if __name__ == '__main__':
                 index = ''
                 grandparentRatingKey = ''
             elif type == 'episode':
-                thumb = fix(grid['MediaContainer']['Metadata'][y]['grandparentThumb'])
+                try:
+                    thumb = fix(grid['MediaContainer']['Metadata'][y]['grandparentThumb'])
+                except KeyError as e:
+                    try:
+                        thumb = fix(grid['MediaContainer']['Metadata'][y]['thumb'])
+                    except KeyError as e:
+                        thumb = ''
                 title = fix(grid['MediaContainer']['Metadata'][y]['grandparentTitle'])
                 subTitle = fix(grid['MediaContainer']['Metadata'][y]['title'])
                 grandparentKey = fix(grid['MediaContainer']['Metadata'][y]['grandparentKey'])
@@ -493,23 +499,22 @@ if __name__ == '__main__':
             xml += '\n\t\t<icon src="' + program_list[x]['thumb'] + '" />' #thumb/icon
             
             #episode numbering
-            if program_list[x]['parentIndex'] != '':
-                if program_list[x]['index'] != '':
-                    if int(program_list[x]['parentIndex']) < 10:
-                        num_season = '0' + str(program_list[x]['parentIndex'])
-                    else:
-                        num_season = str(program_list[x]['parentIndex'])
-                    if int(program_list[x]['index']) < 10:
-                        num_episode = '0' + str(program_list[x]['index'])
-                    else:
-                        num_episode = str(program_list[x]['index'])
-                    xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                    xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                    indexSeason = int(program_list[x]['parentIndex'])
-                    indexSeason -= 1
-                    indexEpisode = int(program_list[x]['index'])
-                    indexEpisode -= 1
-                    xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '</episode-num>' #episode number
+            if program_list[x]['parentIndex'] != '' and program_list[x]['index'] != '':
+                if int(program_list[x]['parentIndex']) < 10:
+                    num_season = '0' + str(program_list[x]['parentIndex'])
+                else:
+                    num_season = str(program_list[x]['parentIndex'])
+                if int(program_list[x]['index']) < 10:
+                    num_episode = '0' + str(program_list[x]['index'])
+                else:
+                    num_episode = str(program_list[x]['index'])
+                xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                indexSeason = int(program_list[x]['parentIndex'])
+                indexSeason -= 1
+                indexEpisode = int(program_list[x]['index'])
+                indexEpisode -= 1
+                xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '.</episode-num>' #episode number
             xml += '\n\t\t<episode-num system="plex">' + program_list[x]['ratingKey'] + '</episode-num>' #episode number
         
         try:
