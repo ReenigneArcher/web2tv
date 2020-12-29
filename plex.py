@@ -26,45 +26,6 @@ if __name__ == '__main__':
             string = string
         return string
     
-    def find_between_split(s, start, end):
-        try:
-            return (s.split(start))[1].split(end)[0]
-        except IndexError:
-            return ""
-
-    def GetListOfSubstrings(stringSubject,string1,string2):
-        MyList = []
-        intstart=0
-        strlength=len(stringSubject)
-        continueloop = 1
-        while(intstart < strlength and continueloop == 1):
-            intindex1=stringSubject.find(string1,intstart)
-            if(intindex1 != -1): #The substring was found, lets proceed
-                intindex1 = intindex1+len(string1)
-                intindex2 = stringSubject.find(string2,intindex1)
-                if(intindex2 != -1):
-                    subsequence=stringSubject[intindex1:intindex2]
-                    MyList.append(subsequence)
-                    intstart=intindex2+len(string2)
-                else:
-                    continueloop=0
-            else:
-                continueloop=0
-        return MyList
-
-    def load_url(url):
-        URL_Req = urllib2.Request(url)
-        
-        try:
-            URL_Response = urllib2.urlopen(URL_Req)
-            URL_Source = URL_Response.read()
-        except urllib2.HTTPError as e: #https://www.programcreek.com/python/example/68989/requests.HTTPError
-            URL_Source = ""
-        
-        URL_Source = URL_Source.replace('\t', '') #remove tabs
-        
-        return URL_Source
-    
     def load_json(url):
         req = urllib2.Request(url)
         req.add_header("Accept",'application/json')
@@ -77,21 +38,37 @@ if __name__ == '__main__':
         text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
         return text
     
+    def get_number(stream):
+        return stream.get('streamVcn')
+    
     #argparse
+    #xml arguments
     parser = argparse.ArgumentParser(description="Python script to convert plex livetv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-t', '--token', type=str, nargs=1, required=True, help='Token is required. Follow Plex instructions for finding the token. https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/#toc-0')
     parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of EPG to collect. Max if 21.')
     parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect. Max is 1.')
     parser.add_argument('-l', '--language', type=str, nargs=1, required=False, default=['en'], help='Plex language... Get from url same as token.')
-    parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plex2xml.xml'], help='Full destination filepath. Default is plex2xml.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('-x', '--xmlFile', type=str, nargs=1, required=False, default=['plex2.xml'], help='Full destination filepath for xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
     parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.')
+    parser.add_argument('--xml', action='store_true', required=False, help='Generate the xml file.')
+    
+    #m3u arguments
+    parser.add_argument('-m', '--m3uFile', type=str, nargs=1, required=False, default=['plex2.m3u'], help='Full destination filepath for m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('--prefix', type=str, nargs=1, required=False, default=[''], help='Channel name prefix.')
+    parser.add_argument('-s', '--startNumber', type=int, nargs=1, required=False, default=[1], help='Start numbering here. For example 9000. If -k, --keepNumber is used then channel 2 would become channel 9002, otherwise the first channel number found would be 9000, second channel found would be 9001, etc.')
+    parser.add_argument('-k', '--keepNumber', action='store_true', required=False, help='Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.')
+    parser.add_argument('--m3u', action='store_true', required=False, help='Generate the m3u file.')
+    parser.add_argument('--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.')
+    
     opts = parser.parse_args()
     
     #string agruments
     x_plex_token = quote_remover(opts.token[0])
     x_plex_language = quote_remover(opts.language[0])
     offset = quote_remover(opts.offset[0])
-    xml_destination = quote_remover(opts.file[0])
+    xml_destination = quote_remover(opts.xmlFile[0])
+    m3u_destination = quote_remover(opts.m3uFile[0])
+    prefix = quote_remover(opts.prefix[0])
     
     #integer arguments
     days_future = opts.days[0]
@@ -100,17 +77,31 @@ if __name__ == '__main__':
     days_past = opts.pastdays[0]
     if days_past > 1:
         days_past = 1
+    startNumber = opts.startNumber[0]
+    
+    #bool arguments
+    makeXML = opts.xml
+    makeM3U = opts.m3u
+    keepNumber = opts.keepNumber
+    streamlink = opts.streamlink
     
     print('token: ' + x_plex_token)
     print('language: ' + x_plex_language)
     print('days: ' + str(days_future))
     print('pastdays: ' + str(days_past))
     print('offset: ' + offset)
-    print('file: ' + xml_destination)
+    print('xmlFile: ' + xml_destination)
+    print('m3uFile: ' + m3u_destination)
+    print('startNumber: ' + str(startNumber))
+    print('keepNumber: ' + str(keepNumber))
+    print('streamlink: ' + str(streamlink))
+    print('xml: ' + str(makeXML))
+    print('m3u: ' + str(makeM3U))
 
     #dictionary arrays to build
     channel_dict = {'data': []}
     program_dict = {'data': []}
+    stream_dict = {'data': []}
     
     keyErrors_contentRating = []
     errorDetails_contentRating = []
@@ -414,156 +405,238 @@ if __name__ == '__main__':
                 videoResolution =  fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['videoResolution'])
                 id = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['id'])
                 channelShortTitle = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelShortTitle'])
-        
-                if duration > 0: #only add programs with a defined duration
-                    program_dict['data'].append({
-                    'ratingKey': ratingKey,
-                    'title': title,
-                    'subTitle': subTitle,
-                    'summary': summary,
-                    'addedAt': addedAt,
-                    'originallyAvailableAt': originallyAvailableAt, #previously shown start time... need to format as YYYYMMDDHHMMSS -HHMM ... can omit unknowns
-                    'thumb': thumb,
-                    'type': type,
-                    'grandparentType': grandparentType,
-                    'parentIndex': parentIndex, #season number
-                    'index': index, #episode number
-                    'contentRating': contentRating, #content rating of the program... TV-PG for example
-                    'year': year, #content rating of the program... TV-PG for example
-                    'beginsAt': beginsAt, #start time in unix
-                    'duration': duration, #duration
-                    'endsAt': endsAt, #end time in unix
-                    'premiere': premiere, #1 for new airings
-                    'videoResolution': videoResolution, #video quality
-                    'channelShortTitle': channelShortTitle, #short title
-                    'channelVcn': channelVcn }) #vcn
-            
-                channel_dict['data'].append({
-                'channelTitle': channelTitle, #vcn + short title
-                'channelIdentifier': channelIdentifier, #key
-                'channelShortTitle': channelShortTitle, #friendly name
-                'channelVcn': channelVcn, #number
-                'channelArt': channelArt, #number
-                'channelThumb': channelThumb}) #icon
                 
+                if makeXML == True:
+                    if duration > 0: #only add programs with a defined duration
+                        program_dict['data'].append({
+                            'ratingKey': ratingKey,
+                            'title': title,
+                            'subTitle': subTitle,
+                            'summary': summary,
+                            'addedAt': addedAt,
+                            'originallyAvailableAt': originallyAvailableAt, #previously shown start time... need to format as YYYYMMDDHHMMSS -HHMM ... can omit unknowns
+                            'thumb': thumb,
+                            'type': type,
+                            'grandparentType': grandparentType,
+                            'parentIndex': parentIndex, #season number
+                            'index': index, #episode number
+                            'contentRating': contentRating, #content rating of the program... TV-PG for example
+                            'year': year, #content rating of the program... TV-PG for example
+                            'beginsAt': beginsAt, #start time in unix
+                            'duration': duration, #duration
+                            'endsAt': endsAt, #end time in unix
+                            'premiere': premiere, #1 for new airings
+                            'videoResolution': videoResolution, #video quality
+                            'channelShortTitle': channelShortTitle, #short title
+                            'channelVcn': channelVcn }) #vcn
+                
+                    channel_dict['data'].append({
+                        'channelTitle': channelTitle, #vcn + short title
+                        'channelIdentifier': channelIdentifier, #key
+                        'channelShortTitle': channelShortTitle, #friendly name
+                        'channelVcn': channelVcn, #number
+                        'channelArt': channelArt, #number
+                        'channelThumb': channelThumb}) #icon
+                
+                if makeM3U == True:
+                    w = 0
+                    for key in grid['MediaContainer']['Metadata'][y]['Media'][z]['Part']:
+                        streamKey = grid['MediaContainer']['Metadata'][y]['Media'][z]['Part'][w]['key']
+                    
+                        stream_dict['data'].append({
+                            'streamKey': streamKey,
+                            'streamTitle': channelTitle, #vcn + short title
+                            'streamIdentifier': channelIdentifier, #key
+                            'streamShortTitle': channelShortTitle, #friendly name
+                            'streamVcn': channelVcn, #number
+                            'streamArt': channelArt, #number
+                            'streamThumb': channelThumb}) #icon
+                        
+                        w += 1
                 z += 1
             y += 1
         x += 1
 
     # remove duplicates
-    channel_list = [i for n, i in enumerate(channel_dict['data']) if i not in channel_dict['data'][n + 1:]]
-    print('Channels Found: ' + str(len(channel_list)+1))
-    program_list = [i for n, i in enumerate(program_dict['data']) if i not in program_dict['data'][n + 1:]]
-    print('Programs Found: ' + str(len(program_list)+1))
+    if makeXML == True:
+        channel_list = [i for n, i in enumerate(channel_dict['data']) if i not in channel_dict['data'][n + 1:]]
+        print('Channels Found: ' + str(len(channel_list)+1))
+        program_list = [i for n, i in enumerate(program_dict['data']) if i not in program_dict['data'][n + 1:]]
+        print('Programs Found: ' + str(len(program_list)+1))
+    if makeM3U == True:
+        stream_list = [i for n, i in enumerate(stream_dict['data']) if i not in stream_dict['data'][n + 1:]]
+        print('Streams Found: ' + str(len(stream_list)+1))
 
-    #start the xml file
-    xml = '<?xml version="1.0" encoding="UTF-8"?>'
-    xml += '\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
-    xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + ' generator-info-url=' + generator_info_url + '>'
+    if makeXML == True:
+        #start the xml file
+        xml = '<?xml version="1.0" encoding="UTF-8"?>'
+        xml += '\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
+        xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + ' generator-info-url=' + generator_info_url + '>'
 
-    x = 0
-    while x < len(channel_list): #do this for each channel
-        xml += '\n\t<channel id="' + 'PLEX.TV.' + channel_list[x]['channelShortTitle'].replace(' ', '.') + '">'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelShortTitle'] + '</display-name>'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelTitle'] + '</display-name>'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelVcn'] + '</display-name>'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelIdentifier'] + '</display-name>'
-        xml += '\n\t\t<icon src="' + channel_list[x]['channelThumb'] + '" />'
-        xml += '\n\t</channel>'
-        print(channel_list[x]['channelTitle'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
-        x += 1
+        x = 0
+        while x < len(channel_list): #do this for each channel
+            xml += '\n\t<channel id="' + 'PLEX.TV.' + channel_list[x]['channelShortTitle'].replace(' ', '.') + '">'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelShortTitle'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelTitle'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelVcn'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelIdentifier'] + '</display-name>'
+            xml += '\n\t\t<icon src="' + channel_list[x]['channelThumb'] + '" />'
+            xml += '\n\t</channel>'
+            print(channel_list[x]['channelTitle'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
+            x += 1
 
-    x = 0
-    while x < len(program_list): #do this for each program
-        timeStart = str(datetime.fromtimestamp(int(program_list[x]['beginsAt']))).replace('-', '').replace(':', '').replace(' ', '')
-        timeEnd = str(datetime.fromtimestamp(int(program_list[x]['endsAt']))).replace('-', '').replace(':', '').replace(' ', '')
-        timeAdded = str(datetime.fromtimestamp(int(program_list[x]['addedAt']))).replace('-', '').replace(':', '').replace(' ', '')
-        timeOriginal = program_list[x]['originallyAvailableAt'].replace('-', '').replace(':', '').replace('T', '').replace('Z', '')
-        
-        xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLEX.TV.' + program_list[x]['channelShortTitle'].replace(' ', '.') + '">' #program,, start, and end time
-        
-        xml += '\n\t\t<title lang="' + x_plex_language + '">' + program_list[x]['title'] + '</title>' #title
-        print(program_list[x]['title'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
-        
-        xml += '\n\t\t<desc lang="' + x_plex_language + '">' + program_list[x]['summary'] + '</desc>' #description/summary
-        xml += '\n\t\t<length units="seconds">' + str(program_list[x]['duration']) + '</length>' #duration/length
-        if timeOriginal != "": #if timeOriginal is not blank
-            xml += '\n\t\t<date>' + timeOriginal + ' ' + offset + '</date>' #date
-        elif str(program_list[x]['year']) != "": #else if year is not blank
-            xml += '\n\t\t<date>' + str(program_list[x]['year']) + '</date>' #year
-
-        if program_list[x]['type'] == 'episode':
+        x = 0
+        while x < len(program_list): #do this for each program
+            timeStart = str(datetime.fromtimestamp(int(program_list[x]['beginsAt']))).replace('-', '').replace(':', '').replace(' ', '')
+            timeEnd = str(datetime.fromtimestamp(int(program_list[x]['endsAt']))).replace('-', '').replace(':', '').replace(' ', '')
+            timeAdded = str(datetime.fromtimestamp(int(program_list[x]['addedAt']))).replace('-', '').replace(':', '').replace(' ', '')
+            timeOriginal = program_list[x]['originallyAvailableAt'].replace('-', '').replace(':', '').replace('T', '').replace('Z', '')
             
-            if program_list[x]['title'] != program_list[x]['subTitle'] and program_list[x]['subTitle'] != '': #if not equal
-                xml += '\n\t\t<sub-title lang="' + x_plex_language + '">' + program_list[x]['subTitle'] + '</sub-title>' #sub-title/tagline
-            xml += '\n\t\t<icon src="' + program_list[x]['thumb'] + '" />' #thumb/icon
+            xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLEX.TV.' + program_list[x]['channelShortTitle'].replace(' ', '.') + '">' #program,, start, and end time
             
-            #episode numbering
-            if program_list[x]['parentIndex'] != '' and program_list[x]['index'] != '':
-                if int(program_list[x]['parentIndex']) < 10:
-                    num_season = '0' + str(program_list[x]['parentIndex'])
-                else:
-                    num_season = str(program_list[x]['parentIndex'])
-                if int(program_list[x]['index']) < 10:
-                    num_episode = '0' + str(program_list[x]['index'])
-                else:
-                    num_episode = str(program_list[x]['index'])
-                xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                indexSeason = int(program_list[x]['parentIndex'])
-                indexSeason -= 1
-                indexEpisode = int(program_list[x]['index'])
-                indexEpisode -= 1
-                xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '.</episode-num>' #episode number
-            xml += '\n\t\t<episode-num system="plex">' + program_list[x]['ratingKey'] + '</episode-num>' #episode number
-        
-        try:
-            xml += '\n\t\t<category lang="' + x_plex_language + '">' + channel_category[program_list[x]['channelVcn']] + '</category>' #music category
-        except KeyError:
-            keyErrors_channelCategory.append(program_list[x]['channelVcn'])
-            errorDetails_chanelCategory.append('Vcn: ' + program_list[x]['channelVcn'] + ', channelShortTitle: ' + program_list[x]['channelShortTitle'])
-        
-        #content rating key
-        #print(program_list[x]['contentRating'])
-        if program_list[x]['contentRating'] != '': #if not blank
+            xml += '\n\t\t<title lang="' + x_plex_language + '">' + program_list[x]['title'] + '</title>' #title
+            print(program_list[x]['title'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
+            
+            xml += '\n\t\t<desc lang="' + x_plex_language + '">' + program_list[x]['summary'] + '</desc>' #description/summary
+            xml += '\n\t\t<length units="seconds">' + str(program_list[x]['duration']) + '</length>' #duration/length
+            if timeOriginal != "": #if timeOriginal is not blank
+                xml += '\n\t\t<date>' + timeOriginal + ' ' + offset + '</date>' #date
+            elif str(program_list[x]['year']) != "": #else if year is not blank
+                xml += '\n\t\t<date>' + str(program_list[x]['year']) + '</date>' #year
+
+            if program_list[x]['type'] == 'episode':
+                
+                if program_list[x]['title'] != program_list[x]['subTitle'] and program_list[x]['subTitle'] != '': #if not equal
+                    xml += '\n\t\t<sub-title lang="' + x_plex_language + '">' + program_list[x]['subTitle'] + '</sub-title>' #sub-title/tagline
+                xml += '\n\t\t<icon src="' + program_list[x]['thumb'] + '" />' #thumb/icon
+                
+                #episode numbering
+                if program_list[x]['parentIndex'] != '' and program_list[x]['index'] != '':
+                    if int(program_list[x]['parentIndex']) < 10:
+                        num_season = '0' + str(program_list[x]['parentIndex'])
+                    else:
+                        num_season = str(program_list[x]['parentIndex'])
+                    if int(program_list[x]['index']) < 10:
+                        num_episode = '0' + str(program_list[x]['index'])
+                    else:
+                        num_episode = str(program_list[x]['index'])
+                    xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                    xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                    indexSeason = int(program_list[x]['parentIndex'])
+                    indexSeason -= 1
+                    indexEpisode = int(program_list[x]['index'])
+                    indexEpisode -= 1
+                    xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '.</episode-num>' #episode number
+                xml += '\n\t\t<episode-num system="plex">' + program_list[x]['ratingKey'] + '</episode-num>' #episode number
+            
             try:
-                xml += '\n\t\t<rating system="' + rating_system[program_list[x]['contentRating'].lower()] + '">' #rating system
-                xml += '\n\t\t\t<value>' + program_list[x]['contentRating'] + '</value>' #rating
-                xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['contentRating'].lower()] + '" />' #rating logo from dictionary
-                xml += '\n\t\t</rating>' #end rating key
+                xml += '\n\t\t<category lang="' + x_plex_language + '">' + channel_category[program_list[x]['channelVcn']] + '</category>' #music category
             except KeyError:
-                keyErrors_contentRating.append(program_list[x]['contentRating'])
-                errorDetails_contentRating.append('Title: ' + program_list[x]['title'] + ', GrandparentTitle: ' + program_list[x]['grandparentTitle'])
-        
-        if program_list[x]['premiere'] == False: #if not premiere add the previously shown tag
-            if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
-                xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
-            else: #else don't add start time to the tag
-                xml += '\n\t\t<previously-shown />'
-        elif program_list[x]['premiere'] == True: #if program is premiere add the tag
-            xml += '\n\t\t<premiere />'
-        
-        #add the video quality
-        xml += '\n\t\t<video>'
-        xml += '\n\t\t\t<quality>' + program_list[x]['videoResolution'] + 'p</quality>'
-        xml += '\n\t\t</video>'
-        
-        #finish
-        xml += '\n\t</programme>'
-        
-        x += 1
+                keyErrors_channelCategory.append(program_list[x]['channelVcn'])
+                errorDetails_chanelCategory.append('Vcn: ' + program_list[x]['channelVcn'] + ', channelShortTitle: ' + program_list[x]['channelShortTitle'])
+            
+            #content rating key
+            #print(program_list[x]['contentRating'])
+            if program_list[x]['contentRating'] != '': #if not blank
+                try:
+                    xml += '\n\t\t<rating system="' + rating_system[program_list[x]['contentRating'].lower()] + '">' #rating system
+                    xml += '\n\t\t\t<value>' + program_list[x]['contentRating'] + '</value>' #rating
+                    xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['contentRating'].lower()] + '" />' #rating logo from dictionary
+                    xml += '\n\t\t</rating>' #end rating key
+                except KeyError:
+                    keyErrors_contentRating.append(program_list[x]['contentRating'])
+                    errorDetails_contentRating.append('Title: ' + program_list[x]['title'] + ', GrandparentTitle: ' + program_list[x]['grandparentTitle'])
+            
+            if program_list[x]['premiere'] == False: #if not premiere add the previously shown tag
+                if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
+                    xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
+                else: #else don't add start time to the tag
+                    xml += '\n\t\t<previously-shown />'
+            elif program_list[x]['premiere'] == True: #if program is premiere add the tag
+                xml += '\n\t\t<premiere />'
+            
+            #add the video quality
+            xml += '\n\t\t<video>'
+            xml += '\n\t\t\t<quality>' + program_list[x]['videoResolution'] + 'p</quality>'
+            xml += '\n\t\t</video>'
+            
+            #finish
+            xml += '\n\t</programme>'
+            
+            x += 1
 
-    xml += '\n</tv>\n'
-    print('xml is ready to write')
-    #print(xml)
+        xml += '\n</tv>\n'
+        print('xml is ready to write')
+        #print(xml)
 
-    #write the file
-    file_handle = open(xml_destination, "w")
-    print('xml is being created')
-    file_handle.write(xml)
-    print('xml is being written')
-    file_handle.close()
-    print('xml is being closed')
+        #write the file
+        file_handle = open(xml_destination, "w")
+        print('xml is being created')
+        file_handle.write(xml)
+        print('xml is being written')
+        file_handle.close()
+        print('xml is being closed')
+
+    if makeM3U == True:
+        channel_numbers = []
+    
+        # sort by channel number (Ascending order)
+        stream_list.sort(key=get_number) #https://www.programiz.com/python-programming/methods/list/sort#:~:text=%20Python%20List%20sort%20%28%29%20%201%20sort,an%20optional%20argument.%20Setting%20reverse%20%3D...%20More%20
+        #print(stream_list)
+    
+        #start the m3u file
+        m3u = '#EXTM3U'
+        
+        newNumber = int(startNumber)
+        x = 0
+        while x < len(stream_list): #do this for each stream
+        
+            if keepNumber == False:
+                newNumber =+ x
+            elif keepNumber == True:
+                newNumber = int(startNumber) + int(stream_list[x]['streamVcn'])
+                
+                r = 0
+                index = 0
+                while r < len(channel_numbers):
+                    if str(newNumber) == str(channel_numbers[r][0]):
+                        index = r
+                        s = len(channel_numbers[r])
+                        channel_numbers[r].append(str(newNumber) + '.' + str(s))
+                        print('Added sub channel: ' + channel_numbers[r][-1])
+                        newNumber = channel_numbers[r][-1]
+                        break
+                    r += 1
+                if index == 0:
+                    channel_numbers.append([str(newNumber)])
+                    print('Added channel: ' + str(channel_numbers[-1][0]))
+        
+        
+            m3u += '\n#EXTINF:-1 tvg-ID="PLEX.TV.' + stream_list[x]['streamShortTitle']
+            m3u += '" CUID="' + str(stream_list[x]['streamIdentifier'])
+            m3u += '" tvg-chno="' + str(newNumber)
+            m3u += '" tvg-name="' + prefix + stream_list[x]['streamShortTitle']
+            if stream_list[x]['streamThumb'] != '':
+                m3u += '" tvg-logo="' + stream_list[x]['streamThumb']
+            m3u += '" group-title="PLEX.TV",' + prefix + stream_list[x]['streamShortTitle']
+            
+            m3u += '\n'
+            if streamlink == True:
+                m3u += 'hls://'
+            m3u += 'https://epg.provider.plex.tv' + stream_list[x]['streamKey'] + '?X-Plex-Token=' + x_plex_token
+            
+            x += 1
+        
+        print('m3u is ready to write')
+        #print(m3u)
+
+        #write the file
+        file_handle = open(m3u_destination, "w")
+        print('m3u is being created')
+        file_handle.write(m3u)
+        print('m3u is being written')
+        file_handle.close()
+        print('m3u is being closed')
     
     if keyErrors_contentRating != []:
         print('...')
