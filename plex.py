@@ -42,12 +42,13 @@ if __name__ == '__main__':
         return stream.get('streamVcn')
     
     #argparse
-    #xml arguments
-    parser = argparse.ArgumentParser(description="Python script to convert plex livetv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="Python script to convert plex livetv guide into xml/m3u format.", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-t', '--token', type=str, nargs=1, required=True, help='Token is required. Follow Plex instructions for finding the token. https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/#toc-0')
-    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of EPG to collect. Max if 21.')
-    parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of EPG to collect. Max is 1.')
+    parser.add_argument('-d', '--days', type=int, nargs=1, required=False, default=[7], help='Days of info to collect. Max if 21.')
+    parser.add_argument('-p', '--pastdays', type=int, nargs=1, required=False, default=[0], help='Days in past of info to collect. Max is 1.')
     parser.add_argument('-l', '--language', type=str, nargs=1, required=False, default=['en'], help='Plex language... Get from url same as token.')
+    
+    #xml arguments
     parser.add_argument('-x', '--xmlFile', type=str, nargs=1, required=False, default=['plex2.xml'], help='Full destination filepath for xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
     parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.')
     parser.add_argument('--xml', action='store_true', required=False, help='Generate the xml file.')
