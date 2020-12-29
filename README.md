@@ -6,11 +6,12 @@ This project contains python2 scripts which load and parse tv guide information 
 Additionally there are some m3u list generators. The following are supported currently.
 -NextPVR
 -pluto.tv
+-m3u (convert m3u for use with Streamlink)
 
 This does not work in python 3 yet. If anyone would like to review the code to get it up to python 3 standards that would be welcome.
 
 # plex2xml
-Arguments:
+description="Python script to convert plex livetv guide into xml format."
 
 '-t', '--token', type=str, nargs=1, required=True, help='Token is required. Follow Plex instructions for finding the token. https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/#toc-0'
 
@@ -25,7 +26,7 @@ Arguments:
 '-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.'
 
 # plutotv2xml
-Arguments:
+description="Python script to convert pluto tv guide into xml format."
 
 '-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 12.'
 
@@ -36,7 +37,7 @@ Arguments:
 '-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.'
 
 # nextpvr2m3u
-Arguments:
+description="Python script to convert pluto tv channels into m3u format."
 
 -f', '--file', type=str, nargs=1, required=False, default=['nextpvr.m3u'], help='Full destination filepath. Default is nextpvr.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
 
@@ -55,7 +56,7 @@ Arguments:
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
 
 # plutotv2m3u
-Arguments:
+description="Python script to convert pluto tv channels into m3u format."
 
 '-f', '--file', type=str, nargs=1, required=False, default=['plutotv.m3u'], help='Full destination filepath. Default is plutotv.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
 
@@ -66,3 +67,12 @@ Arguments:
 '-k', '--keepNumber', action='store_true', required=False, help='Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.'
 
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
+
+# webm3u2m3u
+description="Python script to convert m3u for use with streamlink."
+
+'-i', '--inFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full input file filepath. Full file path can be specified. If only file name is specified then file will be used from the current working directory if it exists.'
+    
+'-o', '--outFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full destination filepath. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
+
+'-p', '--protocol', type=str, nargs=1, required=False, default=['httpstream://'], help='Stream url protocol.'
