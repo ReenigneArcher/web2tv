@@ -428,16 +428,16 @@ if __name__ == '__main__':
     x = 0
     while x < len(channel_list): #do this for each channel
         if makeXML == True:
-            xml += '\n\t<channel id="' + 'PLUTO.TV.' + fix(channel_list[x]['channelSlug']) + '">'
-            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelName']) + '</display-name>'
-            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelSlug']) + '</display-name>'
+            xml += '\n\t<channel id="' + 'PLUTO.TV.' + channel_list[x]['channelSlug'] + '">'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelName'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelSlug'] + '</display-name>'
             xml += '\n\t\t<display-name>' + str(channel_list[x]['channelNumber']) + '</display-name>'
-            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelId']) + '</display-name>'
-            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelHash']) + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelId'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelHash'] + '</display-name>'
             if channel_list[x]['channelImage'] != '':
-                xml += '\n\t\t<icon src="' + fix(channel_list[x]['channelImage']) + '" />'
+                xml += '\n\t\t<icon src="' + channel_list[x]['channelImage'] + '" />'
             xml += '\n\t</channel>'
-            print(fix(channel_list[x]['channelSlug']) + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
+            print(channel_list[x]['channelSlug'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
         if makeM3U == True:
             m3u += '\n#EXTINF:-1 tvg-ID="PLUTO.TV.' + channel_list[x]['channelSlug']
             m3u += '" CUID="' + str(channel_list[x]['channelId'])
@@ -450,9 +450,7 @@ if __name__ == '__main__':
             if streamlink == True:
                 m3u += '\n' + 'https://pluto.tv/live-tv/' + channel_list[x]['channelSlug']
             else:
-                #sid = str(channel_list[x]['channelNumber'])
                 cid = str(channel_list[x]['channelId'])
-                #print(number)
                 #print(cid)
                 
                 m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid=' + sid + '&deviceId=' + did + '&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true'
@@ -499,7 +497,7 @@ if __name__ == '__main__':
                 
                 #print(program_list[x]['episode_series_type'])
                 if program_list[x]['episode_series_type'] == 'tv':
-                    #episode numbering
+                    #episode numbering (how to improve this? ... slow)
                     temp = program_list[x]['episode_slug'].split('-')
                     se_tmp = str(program_list[x]['episode_number']).rsplit('0',1)
                     #print(temp)
@@ -633,3 +631,4 @@ if __name__ == '__main__':
     if keyErrors_full != []:
         print('...')
         print('The following json key_errors were found. :' +str(keyErrors_full))
+
