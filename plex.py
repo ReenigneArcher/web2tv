@@ -6,6 +6,7 @@ import time
 from datetime import datetime, date
 import json
 import cgi
+import io
 
 #url variables
 type = '1%2C4'
@@ -399,13 +400,17 @@ if __name__ == '__main__':
                 endsAt = grid['MediaContainer']['Metadata'][y]['Media'][z]['endsAt']
                 channelVcn = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelVcn'])
                 channelIdentifier = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelIdentifier'])
+                channelIdentifier_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelIdentifier']
                 channelTitle = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelTitle'])
                 channelThumb = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelThumb'])
+                channelThumb_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelThumb']
                 duration = grid['MediaContainer']['Metadata'][y]['Media'][z]['duration']
                 channelArt = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelArt'])
+                channelArt_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelArt']
                 videoResolution =  fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['videoResolution'])
                 id = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['id'])
                 channelShortTitle = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelShortTitle'])
+                channelShortTitle_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelShortTitle']
                 
                 if makeXML == True:
                     if duration > 0: #only add programs with a defined duration
@@ -447,11 +452,11 @@ if __name__ == '__main__':
                         stream_dict['data'].append({
                             'streamKey': streamKey,
                             'streamTitle': channelTitle, #vcn + short title
-                            'streamIdentifier': channelIdentifier, #key
-                            'streamShortTitle': channelShortTitle, #friendly name
+                            'streamIdentifier': channelIdentifier_2, #key
+                            'streamShortTitle': channelShortTitle_2, #friendly name
                             'streamVcn': channelVcn, #number
-                            'streamArt': channelArt, #number
-                            'streamThumb': channelThumb}) #icon
+                            'streamArt': channelArt_2, #artwork
+                            'streamThumb': channelThumb_2}) #icon
                         
                         w += 1
                 z += 1
@@ -612,8 +617,7 @@ if __name__ == '__main__':
                     channel_numbers.append([str(newNumber)])
                     print('Added channel: ' + str(channel_numbers[-1][0]))
         
-        
-            m3u += '\n#EXTINF:-1 tvg-ID="PLEX.TV.' + stream_list[x]['streamShortTitle']
+            m3u += '\n#EXTINF:-1 tvg-ID="PLEX.TV.' + stream_list[x]['streamShortTitle'].replace(' ', '.')
             m3u += '" CUID="' + str(stream_list[x]['streamIdentifier'])
             m3u += '" tvg-chno="' + str(newNumber)
             m3u += '" tvg-name="' + prefix + stream_list[x]['streamShortTitle']
@@ -630,15 +634,13 @@ if __name__ == '__main__':
         
         print('m3u is ready to write')
         #print(m3u)
-
+        
         #write the file
-        file_handle = open(m3u_destination, "w")
         print('m3u is being created')
-        file_handle.write(m3u)
-        print('m3u is being written')
-        file_handle.close()
+        with io.open(m3u_destination, 'w', encoding='utf-8') as file:
+            file.write(m3u)
         print('m3u is being closed')
-    
+
     if keyErrors_contentRating != []:
         print('...')
         print('The following content rating key_errors were found. :' +str(keyErrors_contentRating))
