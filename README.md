@@ -1,16 +1,32 @@
 # web2tv
-This project contains python2 scripts which load and parse tv guide information and return the information in xml format (http://wiki.xmltv.org/index.php/XMLTVFormat) (https://github.com/XMLTV/xmltv/blob/master/xmltv.dtd). You can then use the xml in various other programs such as xTeVe (https://github.com/xteve-project/xTeVe) or other iptv clients that allow epg in xml format. Currently the following sources are supported.
--plext.tv
--pluto.tv
+This project contains python scripts which load and parse tv guide information and return the information in xml format (http://wiki.xmltv.org/index.php/XMLTVFormat) (https://github.com/XMLTV/xmltv/blob/master/xmltv.dtd). You can then use the xml in various other programs such as xTeVe (https://github.com/xteve-project/xTeVe) or other iptv clients that allow epg in xml format.
 
-Additionally there are some m3u list generators. The following are supported currently.
--NextPVR
--pluto.tv
+Additionally there are scripts which generate m3u lists as well as some helper scripts.
+
+*EPG Generation*
+
+-plex.tv (plex.py)
+
+-pluto.tv (plutotv.py)
+
+*M3U Generation*
+
+-NextPVR (nextpvr.py)
+
+-plex.tv (plex.py)
+
+-pluto.tv (plutotv.py)
+
 -m3u (convert m3u for use with Streamlink)
 
-This does not work in python 3 yet. If anyone would like to review the code to get it up to python 3 standards that would be welcome.
+*Helper Scripts*
 
-# m3u_modder
+-Plex DVR (update_plexDVR.py)
+
+I am in the process of removing the use of urllib2 and making this fully functional in python 3.
+
+
+# m3u_modder (py -2)
 description="Python script to convert m3u for use with streamlink."
 
 '-i', '--inFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full input file filepath. Full file path can be specified. If only file name is specified then file will be used from the current working directory if it exists.'
@@ -19,7 +35,7 @@ description="Python script to convert m3u for use with streamlink."
 
 '-p', '--protocol', type=str, nargs=1, required=False, default=['httpstream://'], help='Stream url protocol.'
 
-# nextpvr
+# nextpvr (py -2)
 description="Python script to convert pluto tv channels into m3u format."
 
 -f', '--file', type=str, nargs=1, required=False, default=['nextpvr.m3u'], help='Full destination filepath. Default is nextpvr.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
@@ -38,7 +54,8 @@ description="Python script to convert pluto tv channels into m3u format."
 
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
 
-# plex
+
+# plex (py -2)
 description="Python script to convert plex livetv guide into xml/m3u format."
 
 '-t', '--token', type=str, nargs=1, required=True, help='Token is required. Follow Plex instructions for finding the token. https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/#toc-0')
@@ -71,7 +88,8 @@ description="Python script to convert plex livetv guide into xml/m3u format."
 
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
 
-# plutotv
+
+# plutotv (py -2)
 description="Python script to convert pluto tv guide into xml/m3u format."
 
 '-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 12.'
@@ -100,7 +118,8 @@ description="Python script to convert pluto tv guide into xml/m3u format."
 
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
 
-# update_plexDVR
+
+# update_plexDVR (py -3)
 description="Python script to refresh Plex DVR guide(s)."
 
 '-u', '--uri', type=str, nargs=1, required=False, default=['http://127.0.0.1:32400'], help='Uri to access plex.'
