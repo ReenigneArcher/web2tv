@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import urllib2
+import requests
+from requests.exceptions import HTTPError #why is get_json failing if I remove this?
 import json
 
 if __name__ == '__main__':
@@ -13,26 +14,14 @@ if __name__ == '__main__':
         else:
             string = string
         return string
+
+    def get_json(url, headers):
+        result = requests.get(url, headers=headers).json() #https://stackoverflow.com/a/14804320/11214013
+        return result
     
-    def get_json(url, request_headers):
-        req = urllib2.Request(url, headers = request_headers)
-        req.add_header("Accept",'application/json')
-        opener = urllib2.build_opener()
-        f = opener.open(req)
-        result = json.loads(f.read())
-        return result
-        
-    def post_json(url):
-        try:
-            req = urllib2.Request(url)
-            req.add_data("Content-Type",'application/json')
-            print('req: ' + str(req))
-            opener = urllib2.build_opener()
-            f = opener.open(req)
-            result = json.loads(f.read())
-        except:
-            result = 'error'
-        return result
+    def post_req(url, data):
+        resp = requests.post(url, data=data)
+        return resp
     
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv channels into m3u format.", formatter_class=argparse.RawTextHelpFormatter)
@@ -46,22 +35,29 @@ if __name__ == '__main__':
     uri = quote_remover(opts.uri[0])
     token = quote_remover(opts.token[0])
     
-    #plex_headers = {'X-Plex-Token' : token}
-    #page = get_json(uri + '/web/livetv/dvrs', plex_headers)
-    #print(page)
-    
+    #plex_headers
+    headers = {
+            'Accept': 'application/json',
+            'X-Plex-Device': 'web2tv',
+            'X-Plex-Device-Name': 'web2tv',
+            'X-Plex-Product': 'web2tv',
+            'X-Plex-Version': '0.1',
+            'X-Plex-Client-Identifier': 'rg14zekk3pa5zp4safjwaa8z',
+            'X-Plex-Platform': 'Chrome',
+            'X-Plex-Platform-Version': '80.0',
+            'X-Plex-Token': token
+        }
+        
     #initialize session
-    url_prefix = uri
     url_suffix = '/livetv/dvrs'
-    url = url_prefix + url_suffix
-    payload = {'X-Plex-Token' : token} #https://stackoverflow.com/a/28628514/11214013
-    j = get_json(url, payload)
+    url = uri + url_suffix
+    j = get_json(url, headers) #get dvrs (as json)
     #print(j)
     
     with open('plex_dvrs.json', 'w') as write_file:
         json.dump(j, write_file, indent=4)
         
-    #/livetv/dvrs/${dvrs[i].key}/reloadGuide
+    #reload guide for each dvr
     dvr_dict = {'data': []}
     x = 0
     for key in j['MediaContainer']['Dvr']:
@@ -80,21 +76,32 @@ if __name__ == '__main__':
         
         url += '?X-Plex-Token=' + token
         
-        print(url)
-        r = post_json(url)
-        print(r)
+        #print(url)
+        r = post_req(url, headers)
+        #print(r)
+        print('DVR ' + str(x) + ' with key ' + str(dvr_dict['data'][x]['key']) + ' guide data is refreshing.')
         
         x += 1
-    
-    '''    
-    #url = uri + '/tv.plex.providers.epg.xmltv:48' + '/reloadGuide'
-    #url = uri + '/livetv/dvrs/xmltv:48' + '/reloadGuide'
-    url = uri + '/livetv/dvrs/48/reloadGuide'
-    print(url)
-    print(cookie)
-    t, gar = post_url(url, payload)
-    #with open('plex_cloudkey.json', 'w') as write_file:
-    #    json.dump(t, write_file, indent=4)
-    print(t)
+
     '''
+    #convert this to python from js #https://github.com/vexorian/dizquetv/blob/f428dbecf0c4fd51f9fba1a91fa98eaaae7bbdb8/src/plex.js#L162
+    async RefreshChannels(channels, _dvrs) {
+        var dvrs = typeof _dvrs !== 'undefined' ? _dvrs : await this.GetDVRS()
+        var _channels = []
+        let qs = {}
+        for (var i = 0; i < channels.length; i++) {
+            _channels.push(channels[i].number)
+        }
+        qs.channelsEnabled = _channels.join(',')
+        for (var i = 0; i < _channels.length; i++) {
+            qs[`channelMapping[${_channels[i]}]`] = _channels[i]
+            qs[`channelMappingByKey[${_channels[i]}]`] = _channels[i]
+        }
+        for (var i = 0; i < dvrs.length; i++) {
+            for (var y = 0; y < dvrs[i].Device.length; y++) {
+                await this.Put(`/media/grabbers/devices/${dvrs[i].Device[y].key}/channelmap`, qs);
+            }
+        }
+    }
+    '''    
 
