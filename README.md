@@ -10,7 +10,16 @@ Additionally there are some m3u list generators. The following are supported cur
 
 This does not work in python 3 yet. If anyone would like to review the code to get it up to python 3 standards that would be welcome.
 
-# nextpvr2m3u
+# m3u_modder
+description="Python script to convert m3u for use with streamlink."
+
+'-i', '--inFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full input file filepath. Full file path can be specified. If only file name is specified then file will be used from the current working directory if it exists.'
+    
+'-o', '--outFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full destination filepath. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
+
+'-p', '--protocol', type=str, nargs=1, required=False, default=['httpstream://'], help='Stream url protocol.'
+
+# nextpvr
 description="Python script to convert pluto tv channels into m3u format."
 
 -f', '--file', type=str, nargs=1, required=False, default=['nextpvr.m3u'], help='Full destination filepath. Default is nextpvr.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
@@ -90,12 +99,3 @@ description="Python script to convert pluto tv guide into xml/m3u format."
 '--m3u', action='store_true', required=False, help='Generate the m3u file.'
 
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
-
-# webm3u2m3u
-description="Python script to convert m3u for use with streamlink."
-
-'-i', '--inFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full input file filepath. Full file path can be specified. If only file name is specified then file will be used from the current working directory if it exists.'
-    
-'-o', '--outFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full destination filepath. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
-
-'-p', '--protocol', type=str, nargs=1, required=False, default=['httpstream://'], help='Stream url protocol.'
