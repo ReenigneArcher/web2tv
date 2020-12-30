@@ -2,10 +2,7 @@
 
 import argparse
 import urllib2
-import time
-from datetime import datetime, date
 import json
-import dateutil.parser
 
 if __name__ == '__main__':
     def quote_remover(string):
@@ -16,64 +13,67 @@ if __name__ == '__main__':
         else:
             string = string
         return string
-    
-    def find_between_split(s, start, end):
-        try:
-            return (s.split(start))[1].split(end)[0]
-        except IndexError:
-            return ""
 
-    def GetListOfSubstrings(stringSubject,string1,string2):
-        MyList = []
-        intstart=0
-        strlength=len(stringSubject)
-        continueloop = 1
-        while(intstart < strlength and continueloop == 1):
-            intindex1=stringSubject.find(string1,intstart)
-            if(intindex1 != -1): #The substring was found, lets proceed
-                intindex1 = intindex1+len(string1)
-                intindex2 = stringSubject.find(string2,intindex1)
-                if(intindex2 != -1):
-                    subsequence=stringSubject[intindex1:intindex2]
-                    MyList.append(subsequence)
-                    intstart=intindex2+len(string2)
-                else:
-                    continueloop=0
-            else:
-                continueloop=0
-        return MyList
-
-    def load_url(url):
-        URL_Req = urllib2.Request(url)
-        
-        try:
-            URL_Response = urllib2.urlopen(URL_Req)
-            URL_Source = URL_Response.read()
-        except urllib2.HTTPError as e: #https://www.programcreek.com/python/example/68989/requests.HTTPError
-            URL_Source = ""
-        
-        URL_Source = URL_Source.replace('\t', '') #remove tabs
-        
-        return URL_Source
-    
-    def load_json(url):
-        req = urllib2.Request(url)
-        opener = urllib2.build_opener()
-        f = opener.open(req)
-        result = json.loads(f.read())
-        return result
-    
-    def isotime_convert(iso_time):
-        time = dateutil.parser.isoparse(iso_time) #https://stackoverflow.com/a/15228038/11214013
-        result = time.strftime('%Y%m%d%H%M%S') #https://python.readthedocs.io/en/v2.7.2/library/datetime.html#datetime-objects
-        return result
-    
     def change_text(text): #https://stackoverflow.com/a/30320137/11214013
         return text.encode('utf-8')  # assuming the encoding is UTF-8
 
     def get_number(channel):
         return channel.get('channelNumber')
-    
+
+    def npvr_req(url, isJSON = True):
+        retval = False
+        result = None
+        url_a = url
+        if (not 'session.initiate' in url):
+            url_a += '&sid=' + sid
+            print('url_a: ' + url_a)
+        #print(url_a)
+        try:
+            req = urllib2.Request(url_a, headers={"Accept" : "application/json"})
+            opener = urllib2.build_opener()
+            f = opener.open(req)
+            result = json.loads(f.read())
+            #print(result)
+            retval = True
+        except Exception as e:
+            print(str(e))
+
+        return retval, result
+
+    def hashMe (thedata):
+        import hashlib
+        h = hashlib.md5()
+        h.update(thedata.encode('utf-8'))
+        return h.hexdigest()
+
+    def npvr_login():
+        method = 'session.initiate&ver=1.0&device=emby'
+        ret, keys = npvr_req(url + method)
+        #print(ret)
+        #print(keys)
+        #ret, keys = doRequest5(method)
+        global sid
+        if ret == True:
+            sid =  keys['sid']
+            sid_s =  str(keys['sid'])
+            #print(sid)
+            #print('sid: ' + sid_s)
+            salt = keys['salt']
+            salt_s = str(keys['salt'])
+            #print(salt)
+            #print('salt: ' + salt_s)
+            method = 'session.login&md5=' + hashMe(':' + hashMe(pin) + ':' + salt)
+            #ret, login  = npvr_req(url + method)
+            ret, login  = npvr_req(url + method)
+            #print(ret)
+            #print(login)
+            if ret and login['stat'] == 'ok':
+                sid =  login['sid']
+            else:
+                print ("Fail")
+        else:
+            print ("Fail")
+
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv channels into m3u format.", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['nextpvr.m3u'], help='Full destination filepath. Default is nextpvr.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
@@ -108,60 +108,6 @@ if __name__ == '__main__':
     
     url_base = "http://" + ip + ":" + str(port)
     url = url_base + '/service?method='
-    
-    def npvr_req(url, isJSON = True):
-        retval = False
-        result = None
-        url_a = url
-        if (not 'session.initiate' in url):
-            url_a += '&sid=' + sid
-            print('url_a: ' + url_a)
-        #print(url_a)
-        try:
-            req = urllib2.Request(url_a, headers={"Accept" : "application/json"})
-            opener = urllib2.build_opener()
-            f = opener.open(req)
-            result = json.loads(f.read())
-            #print(result)
-            retval = True
-        except Exception as e:
-            print(str(e))
-
-        return retval, result
-    
-    def hashMe (thedata):
-        import hashlib
-        h = hashlib.md5()
-        h.update(thedata.encode('utf-8'))
-        return h.hexdigest()
-    
-    def npvr_login():
-        method = 'session.initiate&ver=1.0&device=emby'
-        ret, keys = npvr_req(url + method)
-        #print(ret)
-        #print(keys)
-        #ret, keys = doRequest5(method)
-        global sid
-        if ret == True:
-            sid =  keys['sid']
-            sid_s =  str(keys['sid'])
-            #print(sid)
-            #print('sid: ' + sid_s)
-            salt = keys['salt']
-            salt_s = str(keys['salt'])
-            #print(salt)
-            #print('salt: ' + salt_s)
-            method = 'session.login&md5=' + hashMe(':' + hashMe(pin) + ':' + salt)
-            #ret, login  = npvr_req(url + method)
-            ret, login  = npvr_req(url + method)
-            #print(ret)
-            #print(login)
-            if ret and login['stat'] == 'ok':
-                sid =  login['sid']
-            else:
-                print ("Fail")
-        else:
-            print ("Fail")
     
     page = npvr_login()
     method = 'channel.list'
