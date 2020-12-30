@@ -7,6 +7,7 @@ from datetime import datetime, date
 import json
 import dateutil.parser
 import cgi
+import uuid
 
 #xml constants
 source_info_url = '"https://pluto.tv"'
@@ -23,45 +24,6 @@ if __name__ == '__main__':
         else:
             string = string
         return string
-    
-    def find_between_split(s, start, end):
-        try:
-            return (s.split(start))[1].split(end)[0]
-        except IndexError:
-            return ""
-
-    def GetListOfSubstrings(stringSubject,string1,string2):
-        MyList = []
-        intstart=0
-        strlength=len(stringSubject)
-        continueloop = 1
-        while(intstart < strlength and continueloop == 1):
-            intindex1=stringSubject.find(string1,intstart)
-            if(intindex1 != -1): #The substring was found, lets proceed
-                intindex1 = intindex1+len(string1)
-                intindex2 = stringSubject.find(string2,intindex1)
-                if(intindex2 != -1):
-                    subsequence=stringSubject[intindex1:intindex2]
-                    MyList.append(subsequence)
-                    intstart=intindex2+len(string2)
-                else:
-                    continueloop=0
-            else:
-                continueloop=0
-        return MyList
-
-    def load_url(url):
-        URL_Req = urllib2.Request(url)
-        
-        try:
-            URL_Response = urllib2.urlopen(URL_Req)
-            URL_Source = URL_Response.read()
-        except urllib2.HTTPError as e: #https://www.programcreek.com/python/example/68989/requests.HTTPError
-            URL_Source = ""
-        
-        URL_Source = URL_Source.replace('\t', '') #remove tabs
-        
-        return URL_Source
     
     def load_json(url):
         req = urllib2.Request(url)
@@ -82,32 +44,66 @@ if __name__ == '__main__':
         text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
         return text
     
+    def get_number(channel):
+        return channel.get('channelNumber')
+    
     #argparse
-    parser = argparse.ArgumentParser(description="Python script to convert pluto tv guide into xml format.", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="Python script to convert pluto tv guide into xml/m3u format.", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 12.')
-    parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Default is plutotv.xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
-    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used to correct times in final xml file. Not needed during initial testing.')
     parser.add_argument('-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.')
+    
+    #xml arguments
+    parser.add_argument('-x', '--xmlFile', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used to correct times in final xml file. Not needed during initial testing.')
+    parser.add_argument('--xml', action='store_true', required=False, help='Generate the xml file.')
+    
+    #m3u arguments
+    parser.add_argument('-m', '--m3uFile', type=str, nargs=1, required=False, default=['plutotv.m3u'], help='Full destination filepath. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+    parser.add_argument('-p', '--prefix', type=str, nargs=1, required=False, default=[''], help='Channel name prefix.')
+    parser.add_argument('-s', '--startNumber', type=int, nargs=1, required=False, default=[1], help='Start numbering here. For example 9000. If -k, --keepNumber is used then channel 2 would become channel 9002, otherwise the first channel number found would be 9000, second channel found would be 9001, etc.')
+    parser.add_argument('-k', '--keepNumber', action='store_true', required=False, help='Keep existing number scheme. Script will add existing number to start number. Recommended start number ends with a 0.')
+    parser.add_argument('--m3u', action='store_true', required=False, help='Generate the m3u file.')
+    parser.add_argument('--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.')
+    
     opts = parser.parse_args()
     
     #string agruments
     offset = quote_remover(opts.offset[0])
     timezone = quote_remover(opts.timezone[0])
-    xml_destination = quote_remover(opts.file[0])
+    xml_destination = quote_remover(opts.xmlFile[0])
+    m3u_destination = quote_remover(opts.m3uFile[0])
+    prefix = quote_remover(opts.prefix[0])
     
     #integer arguments
     epg_hours = opts.epgHours[0]
     if epg_hours > 12:
         epg_hours = 12
+    startNumber = opts.startNumber[0]
+    
+    #bool arguments
+    makeXML = opts.xml
+    makeM3U = opts.m3u
+    keepNumber = opts.keepNumber
+    streamlink = opts.streamlink
     
     print('hours: ' + str(epg_hours))
     print('offset: ' + offset)
     print('timezone: ' + timezone)
-    print('file: ' + xml_destination)
+    print('xmlFile: ' + xml_destination)
+    print('m3uFile: ' + m3u_destination)
+    print('prefix: ' + prefix)
+    print('startNumber: ' + str(startNumber))
+    print('keepNumber: ' + str(keepNumber))
+    print('streamlink: ' + str(streamlink))
+    print('xml: ' + str(makeXML))
+    print('m3u: ' + str(makeM3U))
 
     #dictionary arrays to build
     channel_dict = {'data': []}
     program_dict = {'data': []}
+    
+    #arrays to build
+    channel_numbers = []
     
     keyErrors_contentRating = []
     errorDetails_contentRating = []
@@ -199,14 +195,35 @@ if __name__ == '__main__':
     
     x = 0
     for key in grid['channels']:
+        if keepNumber == False:
+            newNumber =+ x
+        elif keepNumber == True:
+            newNumber = startNumber + grid['channels'][x]['number']
+            
+            r = 0
+            index = 0
+            while r < len(channel_numbers):
+                if str(newNumber) == str(channel_numbers[r][0]):
+                    index = r
+                    s = len(channel_numbers[r])
+                    channel_numbers[r].append(str(newNumber) + '.' + str(s))
+                    print('Added sub channel: ' + channel_numbers[r][-1])
+                    newNumber = channel_numbers[r][-1]
+                    break
+                r += 1
+            if index == 0:
+                channel_numbers.append([str(newNumber)])
+                print('Added channel: ' + str(channel_numbers[-1][0]))
+
         channel_dict['data'].append({
-            'channelName': fix(grid['channels'][x]['name']), #name
-            'channelSlug': fix(grid['channels'][x]['slug']), #slug
-            'channelHash': fix(grid['channels'][x]['hash']), #hash
+            'channelName': grid['channels'][x]['name'], #name
+            'channelSlug': grid['channels'][x]['slug'], #slug
+            'channelHash': grid['channels'][x]['hash'], #hash
             'channelNumber': grid['channels'][x]['number'], #number
-            'channelId': fix(grid['channels'][x]['id']), #id
-            'channelSummary': fix(grid['channels'][x]['summary']), #summary
-            'channelImage': fix(grid['channels'][x]['images'][0]['url']) }) #logo
+            'channelId': grid['channels'][x]['id'], #id
+            'channelSummary': grid['channels'][x]['summary'], #summary
+            'channelImage': grid['channels'][x]['images'][0]['url'], #logo
+            'newNumber': newNumber })
         
         y = 0
         for key in grid['channels'][x]['timelines']:
@@ -388,170 +405,219 @@ if __name__ == '__main__':
     # remove duplicates
     channel_list = [i for n, i in enumerate(channel_dict['data']) if i not in channel_dict['data'][n + 1:]]
     print('Channels Found: ' + str(len(channel_list)+1))
-    program_list = [i for n, i in enumerate(program_dict['data']) if i not in program_dict['data'][n + 1:]]
-    print('Programs Found: ' + str(len(program_list)+1))
+    # sort by channel number (Ascending order)
+    channel_list.sort(key=get_number) #https://www.programiz.com/python-programming/methods/list/sort#:~:text=%20Python%20List%20sort%20%28%29%20%201%20sort,an%20optional%20argument.%20Setting%20reverse%20%3D...%20More%20
+    #print(channel_list)
+    
+    if makeXML == True:
+        program_list = [i for n, i in enumerate(program_dict['data']) if i not in program_dict['data'][n + 1:]]
+        print('Programs Found: ' + str(len(program_list)+1))
 
-    #start the xml file
-    xml = '<?xml version="1.0" encoding="UTF-8"?>'
-    xml += '\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
-    xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + ' generator-info-url=' + generator_info_url + '>'
+        #start the xml file
+        xml = '<?xml version="1.0" encoding="UTF-8"?>'
+        xml += '\n<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'
+        xml += '\n<tv source-info-url=' + source_info_url + ' source-info-name=' + source_info_name + ' generator-info-name=' + generator_info_name + ' generator-info-url=' + generator_info_url + '>'
+    
+    if makeM3U == True:
+        #start the m3u file
+        m3u = '#EXTM3U'
+
+        did = str(uuid.uuid4()) #https://docs.python.org/2.7/library/uuid.html
+        sid = str(uuid.uuid4()) #https://docs.python.org/2.7/library/uuid.html
 
     x = 0
     while x < len(channel_list): #do this for each channel
-        xml += '\n\t<channel id="' + 'PLUTO.TV.' + channel_list[x]['channelSlug'] + '">'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelName'] + '</display-name>'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelSlug'] + '</display-name>'
-        xml += '\n\t\t<display-name>' + str(channel_list[x]['channelNumber']) + '</display-name>'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelId'] + '</display-name>'
-        xml += '\n\t\t<display-name>' + channel_list[x]['channelHash'] + '</display-name>'
-        if channel_list[x]['channelImage'] != '':
-            xml += '\n\t\t<icon src="' + channel_list[x]['channelImage'] + '" />'
-        xml += '\n\t</channel>'
-        print(channel_list[x]['channelSlug'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
+        if makeXML == True:
+            xml += '\n\t<channel id="' + 'PLUTO.TV.' + channel_list[x]['channelSlug'] + '">'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelName'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelSlug'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + str(channel_list[x]['channelNumber']) + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelId'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + channel_list[x]['channelHash'] + '</display-name>'
+            if channel_list[x]['channelImage'] != '':
+                xml += '\n\t\t<icon src="' + channel_list[x]['channelImage'] + '" />'
+            xml += '\n\t</channel>'
+            print(channel_list[x]['channelSlug'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
+        if makeM3U == True:
+            m3u += '\n#EXTINF:-1 tvg-ID="PLUTO.TV.' + channel_list[x]['channelSlug']
+            m3u += '" CUID="' + str(channel_list[x]['channelId'])
+            m3u += '" tvg-chno="' + str(channel_list[x]['newNumber'])
+            m3u += '" tvg-name="' + prefix + channel_list[x]['channelName']
+            if channel_list[x]['channelImage'] != '':
+                m3u += '" tvg-logo="' + channel_list[x]['channelImage']
+            m3u += '" group-title="PLUTO.TV",' + prefix + channel_list[x]['channelName']
+            
+            if streamlink == True:
+                m3u += '\n' + 'https://pluto.tv/live-tv/' + channel_list[x]['channelSlug']
+            else:
+                #sid = str(channel_list[x]['channelNumber'])
+                cid = str(channel_list[x]['channelId'])
+                #print(number)
+                #print(cid)
+                
+                m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid=' + sid + '&deviceId=' + did + '&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true'
+
+            #print(channel_list[x]['channelSlug'] + ' will be added to the m3u.' + str(x+1) + '/' + str(len(channel_list)))
         x += 1
 
-    x = 0
-    while x < len(program_list): #do this for each program
-        if program_list[x]['episode_duration'] / 1000 > 0: #if duration is greater than 0
-            timeStart = isotime_convert(program_list[x]['start'])
-            timeEnd = isotime_convert(program_list[x]['stop'])
-            timeAdded = isotime_convert(program_list[x]['episode_clip_originalReleaseDate'])
-            timeOriginal = isotime_convert(program_list[x]['episode_firstAired'])
-            
-            #print(timeStart)
-            #print(timeEnd)
-            #print(timeAdded)
-            #print(timeOriginal)
-            
-            xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLUTO.TV.' + program_list[x]['channelSlug'] + '">' #program,, start, and end time
-            
-            xml += '\n\t\t<desc lang="' + 'en' + '">' + program_list[x]['episode_description'] + '</desc>' #description/summary
-            xml += '\n\t\t<length units="seconds">' + str(program_list[x]['episode_duration'] / 1000) + '</length>' #duration/length
-            if timeAdded != "": #if timeAdded is not blank
-                xml += '\n\t\t<date>' + timeAdded + ' ' + offset + '</date>' #date
-            
-            xml += '\n\t\t<title lang="' + 'en' + '">' + program_list[x]['episode_series_name'] + '</title>' #title
-            
-            try:
-                print('   Airing: ' + str(x+1) + '/' + str(len(program_list)) + ' will be added to the xml... ' + fix(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'])
-            except SyntaxError as e:
-                print("---Cannot print this title due to SyntaxError: " + str(e))
-                time.sleep(2)
-            except UnicodeEncodeError as e:
-                #print(change_text(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
-                print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
-                time.sleep(2)
-            
-            if program_list[x]['episode_name'] != program_list[x]['episode_series_name']: #if not equal
-                xml += '\n\t\t<sub-title lang="' + 'en' + '">' + program_list[x]['episode_name'] + '</sub-title>' #sub-title/tagline
-            xml += '\n\t\t<icon src="' + program_list[x]['episode_poster_path'] + '" />' #thumb/icon
-            
-            #print(program_list[x]['episode_series_type'])
-            if program_list[x]['episode_series_type'] == 'tv':
-                #episode numbering
-                temp = program_list[x]['episode_slug'].split('-')
-                se_tmp = str(program_list[x]['episode_number']).rsplit('0',1)
-                #print(temp)
-                if temp[-1] == 'embed':
-                    del temp[-1]
-                if temp[-1][:3] == 'ptv':
-                    part = temp[-1][3:]
-                    del temp[-1]
-                else:
-                    part = ''
-                try: #https://stackoverflow.com/a/3501408/11214013
-                    season = temp[-2]
-                    t = int(season) + 1
-                except:
-                    season = ''
-                if season != '' and str(program_list[x]['episode_number']) == temp[-1] or se_tmp[-1] == temp[-1]: #example for or: tv: rule does not match... Episode: 405 Slug: [u'280', u'sq', u'ft', u'bohemian', u'tree', u'house', u'2017', u'4', u'5']
+    if makeXML == True:
+        x = 0
+        while x < len(program_list): #do this for each program
+            if program_list[x]['episode_duration'] / 1000 > 0: #if duration is greater than 0
+                timeStart = isotime_convert(program_list[x]['start'])
+                timeEnd = isotime_convert(program_list[x]['stop'])
+                timeAdded = isotime_convert(program_list[x]['episode_clip_originalReleaseDate'])
+                timeOriginal = isotime_convert(program_list[x]['episode_firstAired'])
+                
+                #print(timeStart)
+                #print(timeEnd)
+                #print(timeAdded)
+                #print(timeOriginal)
+                
+                xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLUTO.TV.' + program_list[x]['channelSlug'] + '">' #program,, start, and end time
+                
+                xml += '\n\t\t<desc lang="' + 'en' + '">' + program_list[x]['episode_description'] + '</desc>' #description/summary
+                xml += '\n\t\t<length units="seconds">' + str(program_list[x]['episode_duration'] / 1000) + '</length>' #duration/length
+                if timeAdded != "": #if timeAdded is not blank
+                    xml += '\n\t\t<date>' + timeAdded + ' ' + offset + '</date>' #date
+                
+                xml += '\n\t\t<title lang="' + 'en' + '">' + program_list[x]['episode_series_name'] + '</title>' #title
+                
+                #try:
+                print('   Airing: ' + str(x+1) + '/' + str(len(program_list)) + ' will be added to the xml... ' + program_list[x]['episode_series_name'] + ',_id: ' + program_list[x]['_id'])
+                #except SyntaxError as e:
+                #    print("---Cannot print this title due to SyntaxError: " + str(e))
+                #    time.sleep(2)
+                #except UnicodeEncodeError as e:
+                #    #print(change_text(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
+                #    print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
+                #    time.sleep(2)
+                
+                if program_list[x]['episode_name'] != program_list[x]['episode_series_name']: #if not equal
+                    xml += '\n\t\t<sub-title lang="' + 'en' + '">' + program_list[x]['episode_name'] + '</sub-title>' #sub-title/tagline
+                xml += '\n\t\t<icon src="' + program_list[x]['episode_poster_path'] + '" />' #thumb/icon
+                
+                #print(program_list[x]['episode_series_type'])
+                if program_list[x]['episode_series_type'] == 'tv':
+                    #episode numbering
+                    temp = program_list[x]['episode_slug'].split('-')
+                    se_tmp = str(program_list[x]['episode_number']).rsplit('0',1)
+                    #print(temp)
+                    if temp[-1] == 'embed':
+                        del temp[-1]
+                    if temp[-1][:3] == 'ptv':
+                        part = temp[-1][3:]
+                        del temp[-1]
+                    else:
+                        part = ''
                     try: #https://stackoverflow.com/a/3501408/11214013
-                        episode = temp[-1]
-                        t = int(episode) + 1
+                        season = temp[-2]
+                        t = int(season) + 1
                     except:
-                        episode = ''
-                    if season == episode[:len(season)]:
+                        season = ''
+                    if season != '' and str(program_list[x]['episode_number']) == temp[-1] or se_tmp[-1] == temp[-1]: #example for or: tv: rule does not match... Episode: 405 Slug: [u'280', u'sq', u'ft', u'bohemian', u'tree', u'house', u'2017', u'4', u'5']
+                        try: #https://stackoverflow.com/a/3501408/11214013
+                            episode = temp[-1]
+                            t = int(episode) + 1
+                        except:
+                            episode = ''
+                        if season == episode[:len(season)]:
+                            episode = temp[-1][len(season):]
+                        #print('tv: rule1 matches')
+                    elif str(program_list[x]['episode_number']) == temp[-1][len(season):]: #exmaple tv: rule does not match... Episode: 1 Slug: [u'whistle', u'blower', u'1996', u'2', u'21']
                         episode = temp[-1][len(season):]
-                    #print('tv: rule1 matches')
-                elif str(program_list[x]['episode_number']) == temp[-1][len(season):]: #exmaple tv: rule does not match... Episode: 1 Slug: [u'whistle', u'blower', u'1996', u'2', u'21']
-                    episode = temp[-1][len(season):]
-                    try: #https://stackoverflow.com/a/3501408/11214013
-                        t = int(episode) + 1
-                    except:
+                        try: #https://stackoverflow.com/a/3501408/11214013
+                            t = int(episode) + 1
+                        except:
+                            episode = ''
+                        #print('tv: rule2 matches')
+                    else:
                         episode = ''
-                    #print('tv: rule2 matches')
-                else:
-                    episode = ''
-                    #print(se_tmp)
-                    #print(temp[-1][len(season):])
-                    #print('tv: rule does not match... Episode: ' + str(program_list[x]['episode_number']) + ' Slug: ' + str(temp))
-                #print(season)
-                #print(episode)
-                if season != ''and int(season) > 0:
-                    if episode != '' and int(episode) > 0:
-                        if int(season) < 10:
-                            num_season = '0' + season
-                        else:
-                            num_season = season
-                        if int(episode) < 10:
-                            num_episode = '0' + episode
-                        else:
-                            num_episode = episode
-                        xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                        xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
-                        indexSeason = int(season)
-                        indexSeason -= 1
-                        indexEpisode = int(episode)
-                        indexEpisode -= 1
-                        xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '.</episode-num>' #episode number
-                xml += '\n\t\t<episode-num system="pluto.tv.number">' + str(program_list[x]['episode_number']) + '</episode-num>' #episode number
-                xml += '\n\t\t<episode-num system="pluto.tv.slug">' + program_list[x]['episode_slug'] + '</episode-num>' #episode number
-                xml += '\n\t\t<episode-num system="pluto.tv.id">' + program_list[x]['episode_id'] + '</episode-num>' #episode number
-            
-                xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_genre'] + '</category>' #category
-                xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_series_type'] + '</category>' #category
-            
-            #content rating key
-            #print(program_list[x]['contentRating'])
-            if program_list[x]['episode_rating'] != '': #if not blank
-                try:
-                    xml += '\n\t\t<rating system="' + rating_system[program_list[x]['episode_rating'].lower()] + '">' #rating system
-                    xml += '\n\t\t\t<value>' + program_list[x]['episode_rating'] + '</value>' #rating
-                    xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['episode_rating'].lower()] + '" />' #rating logo from dictionary
-                    xml += '\n\t\t</rating>' #end rating key
-                except KeyError:
-                    keyErrors_contentRating.append(program_list[x]['episode_rating'])
-                    errorDetails_contentRating.append('Title: ' + program_list[x]['episode_name'] + ', Channel: ' + program_list[x]['channelSlug'])
-            
-            if program_list[x]['episode_firstAired'] != '': #if first aired is not blank add the premier
-                if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
-                    xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
-                else: #else don't add start time to the tag
-                    xml += '\n\t\t<previously-shown />'
-            else: #if program is premiere add the tag
-                xml += '\n\t\t<premiere />'
-            
-            if program_list[x]['episode_liveBroadcast'] == True or program_list[x]['episode_series_type'] == 'live':
-                xml += '\n\t\t<live />'
-            
-            #finish
-            xml += '\n\t</programme>'
-            
-        x += 1
+                        #print(se_tmp)
+                        #print(temp[-1][len(season):])
+                        #print('tv: rule does not match... Episode: ' + str(program_list[x]['episode_number']) + ' Slug: ' + str(temp))
+                    #print(season)
+                    #print(episode)
+                    if season != ''and int(season) > 0:
+                        if episode != '' and int(episode) > 0:
+                            if int(season) < 10:
+                                num_season = '0' + season
+                            else:
+                                num_season = season
+                            if int(episode) < 10:
+                                num_episode = '0' + episode
+                            else:
+                                num_episode = episode
+                            xml += '\n\t\t<episode-num system="onscreen">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                            xml += '\n\t\t<episode-num system="common">' + 'S' + num_season + 'E' + num_episode + '</episode-num>' #episode number
+                            indexSeason = int(season)
+                            indexSeason -= 1
+                            indexEpisode = int(episode)
+                            indexEpisode -= 1
+                            xml += '\n\t\t<episode-num system="xmltv_ns">' + str(indexSeason) + '.' + str(indexEpisode) + '.</episode-num>' #episode number
+                    xml += '\n\t\t<episode-num system="pluto.tv.number">' + str(program_list[x]['episode_number']) + '</episode-num>' #episode number
+                    xml += '\n\t\t<episode-num system="pluto.tv.slug">' + program_list[x]['episode_slug'] + '</episode-num>' #episode number
+                    xml += '\n\t\t<episode-num system="pluto.tv.id">' + program_list[x]['episode_id'] + '</episode-num>' #episode number
+                
+                    xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_genre'] + '</category>' #category
+                    xml += '\n\t\t<category lang="' + 'en' + '">' + program_list[x]['episode_series_type'] + '</category>' #category
+                
+                #content rating key
+                #print(program_list[x]['contentRating'])
+                if program_list[x]['episode_rating'] != '': #if not blank
+                    try:
+                        xml += '\n\t\t<rating system="' + rating_system[program_list[x]['episode_rating'].lower()] + '">' #rating system
+                        xml += '\n\t\t\t<value>' + program_list[x]['episode_rating'] + '</value>' #rating
+                        xml += '\n\t\t\t<icon src="' + rating_logo[program_list[x]['episode_rating'].lower()] + '" />' #rating logo from dictionary
+                        xml += '\n\t\t</rating>' #end rating key
+                    except KeyError:
+                        keyErrors_contentRating.append(program_list[x]['episode_rating'])
+                        errorDetails_contentRating.append('Title: ' + program_list[x]['episode_name'] + ', Channel: ' + program_list[x]['channelSlug'])
+                
+                if program_list[x]['episode_firstAired'] != '': #if first aired is not blank add the premier
+                    if timeOriginal != "": #if we have the originallyAvailableAt add it to the tag
+                        xml += '\n\t\t<previously-shown start="' + timeOriginal + ' ' + offset + '" />'
+                    else: #else don't add start time to the tag
+                        xml += '\n\t\t<previously-shown />'
+                else: #if program is premiere add the tag
+                    xml += '\n\t\t<premiere />'
+                
+                if program_list[x]['episode_liveBroadcast'] == True or program_list[x]['episode_series_type'] == 'live':
+                    xml += '\n\t\t<live />'
+                
+                #finish
+                xml += '\n\t</programme>'
+                
+            x += 1
 
-    xml += '\n</tv>\n'
-    xml = xml.decode('unicode_escape').encode('utf-8')
-    print('xml is ready to write')
-    #print(xml)
+        xml += '\n</tv>\n'
+        #print(xml)
+        
+        print('xml is ready to write')
+        #print(xml)
 
-    #write the file
-    file_handle = open(xml_destination, "w")
-    print('xml is being created')
-    #xml = change_text(xml)
-    file_handle.write(xml)
-    print('xml is being written')
-    file_handle.close()
-    print('xml is being closed')
+        #write the file
+        file_handle = open(xml_destination, "w")
+        print('xml is being created')
+        xml = change_text(xml)
+        xml = xml.decode('unicode_escape').encode('utf-8')
+        file_handle.write(xml)
+        print('xml is being written')
+        file_handle.close()
+        print('xml is being closed')
+        
+    if makeM3U == True:
+        print('m3u is ready to write')
+        #print(m3u)
+
+        #write the file
+        file_handle = open(m3u_destination, "w")
+        print('m3u is being created')
+        m3u = change_text(m3u)
+        file_handle.write(m3u)
+        print('m3u is being written')
+        file_handle.close()
+        print('m3u is being closed')
     
     if keyErrors_contentRating != []:
         print('...')
