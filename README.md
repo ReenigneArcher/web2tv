@@ -99,3 +99,10 @@ description="Python script to convert pluto tv guide into xml/m3u format."
 '--m3u', action='store_true', required=False, help='Generate the m3u file.'
 
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
+
+# update_plexDVR
+description="Python script to refresh Plex DVR guide(s)."
+
+'-u', '--uri', type=str, nargs=1, required=False, default=['http://127.0.0.1:32400'], help='Uri to access plex.'
+
+'-t', '--token', type=str, nargs=1, required=True, default=[''], help='Plex server token'
