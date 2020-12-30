@@ -26,21 +26,31 @@ if __name__ == '__main__':
     protocol = quote_remover(opts.protocol[0])
     
     
-    if input.startswith('http'): # https://www.tutorialspoint.com/python/string_startswith.htm
-        data = requests.get(url=input).text
+    if input.startswith('http'): #https://www.tutorialspoint.com/python/string_startswith.htm
+        inputFile = requests.get(url=input).text #https://stackoverflow.com/a/1393367/11214013
+        data = inputFile.split('\n')
+        #print(len(data))
+        x = 0
+        while x < len(data):
+            data[x] = data[x] + '\n'
+            x += 1
     else:
         inputFile = open (input, 'r')
+        print(type(inputFile))
         data = inputFile.readlines()
         inputFile.close()
-    
+    print(type(data))
     print(protocol)
         
     #start the m3u file
     m3u = ''
     
+    #for line in data: #https://thispointer.com/5-different-ways-to-read-a-file-line-by-line-in-python/
     for line in data: #https://thispointer.com/5-different-ways-to-read-a-file-line-by-line-in-python/
-        if line.startswith ('#') == True:
+        if line.startswith ('#'):
             m3u += line
+        elif line.startswith ('\n'):
+            pass
         elif line.startswith (protocol) != True:
             m3u += protocol + line
             print('Prepending stream: ' + line + ' ... with ' + protocol)
