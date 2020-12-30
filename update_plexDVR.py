@@ -24,7 +24,7 @@ if __name__ == '__main__':
         return resp
     
     #argparse
-    parser = argparse.ArgumentParser(description="Python script to convert pluto tv channels into m3u format.", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description="Python script to refresh Plex DVR guide(s).", formatter_class=argparse.RawTextHelpFormatter)
     #parser.add_argument('-x', '--xml', type=str, nargs=1, required=False, default=['epg.xml'], help='Full input filepath of xml that includes channels to include for Plex. Default is epg.xml. Full file path can be specified. If only file name is specified then file from the current working directory will be used if it exists.')
     parser.add_argument('-u', '--uri', type=str, nargs=1, required=False, default=['http://127.0.0.1:32400'], help='Uri to access plex.')
     parser.add_argument('-t', '--token', type=str, nargs=1, required=True, default=[''], help='Plex server token')
