@@ -12,8 +12,8 @@ import uuid
 #xml constants
 source_info_url = '"https://pluto.tv"'
 source_info_name = '"pluto.tv"'
-generator_info_name = '"plutotv2xml"'
-generator_info_url = '"https://github.com/ReenigneArcher/plutotv2xml"'
+generator_info_name = '"web2tv"'
+generator_info_url = '"https://github.com/ReenigneArcher/web2tv"'
 
 if __name__ == '__main__':
     def quote_remover(string):
@@ -428,16 +428,16 @@ if __name__ == '__main__':
     x = 0
     while x < len(channel_list): #do this for each channel
         if makeXML == True:
-            xml += '\n\t<channel id="' + 'PLUTO.TV.' + channel_list[x]['channelSlug'] + '">'
-            xml += '\n\t\t<display-name>' + channel_list[x]['channelName'] + '</display-name>'
-            xml += '\n\t\t<display-name>' + channel_list[x]['channelSlug'] + '</display-name>'
+            xml += '\n\t<channel id="' + 'PLUTO.TV.' + fix(channel_list[x]['channelSlug']) + '">'
+            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelName']) + '</display-name>'
+            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelSlug']) + '</display-name>'
             xml += '\n\t\t<display-name>' + str(channel_list[x]['channelNumber']) + '</display-name>'
-            xml += '\n\t\t<display-name>' + channel_list[x]['channelId'] + '</display-name>'
-            xml += '\n\t\t<display-name>' + channel_list[x]['channelHash'] + '</display-name>'
+            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelId']) + '</display-name>'
+            xml += '\n\t\t<display-name>' + fix(channel_list[x]['channelHash']) + '</display-name>'
             if channel_list[x]['channelImage'] != '':
-                xml += '\n\t\t<icon src="' + channel_list[x]['channelImage'] + '" />'
+                xml += '\n\t\t<icon src="' + fix(channel_list[x]['channelImage']) + '" />'
             xml += '\n\t</channel>'
-            print(channel_list[x]['channelSlug'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
+            print(fix(channel_list[x]['channelSlug']) + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
         if makeM3U == True:
             m3u += '\n#EXTINF:-1 tvg-ID="PLUTO.TV.' + channel_list[x]['channelSlug']
             m3u += '" CUID="' + str(channel_list[x]['channelId'])
@@ -483,15 +483,15 @@ if __name__ == '__main__':
                 
                 xml += '\n\t\t<title lang="' + 'en' + '">' + program_list[x]['episode_series_name'] + '</title>' #title
                 
-                #try:
-                print('   Airing: ' + str(x+1) + '/' + str(len(program_list)) + ' will be added to the xml... ' + program_list[x]['episode_series_name'] + ',_id: ' + program_list[x]['_id'])
-                #except SyntaxError as e:
-                #    print("---Cannot print this title due to SyntaxError: " + str(e))
-                #    time.sleep(2)
-                #except UnicodeEncodeError as e:
-                #    #print(change_text(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
-                #    print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
-                #    time.sleep(2)
+                try:
+                    print('   Airing: ' + str(x+1) + '/' + str(len(program_list)) + ' will be added to the xml... ' + program_list[x]['episode_series_name'] + ',_id: ' + program_list[x]['_id'])
+                except SyntaxError as e:
+                    print("---Cannot print this title due to SyntaxError: " + str(e))
+                    time.sleep(2)
+                except UnicodeEncodeError as e:
+                    #print(change_text(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
+                    print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
+                    time.sleep(2)
                 
                 if program_list[x]['episode_name'] != program_list[x]['episode_series_name']: #if not equal
                     xml += '\n\t\t<sub-title lang="' + 'en' + '">' + program_list[x]['episode_name'] + '</sub-title>' #sub-title/tagline
@@ -590,17 +590,16 @@ if __name__ == '__main__':
                 
             x += 1
 
+    if makeXML == True:
         xml += '\n</tv>\n'
-        #print(xml)
-        
+        xml = xml.decode('unicode_escape').encode('utf-8')
         print('xml is ready to write')
         #print(xml)
 
         #write the file
         file_handle = open(xml_destination, "w")
         print('xml is being created')
-        xml = change_text(xml)
-        xml = xml.decode('unicode_escape').encode('utf-8')
+        #xml = change_text(xml)
         file_handle.write(xml)
         print('xml is being written')
         file_handle.close()
