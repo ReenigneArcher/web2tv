@@ -39,8 +39,6 @@ if __name__ == '__main__':
         print(type(inputFile))
         data = inputFile.readlines()
         inputFile.close()
-    print(type(data))
-    print(protocol)
         
     #start the m3u file
     m3u = ''
