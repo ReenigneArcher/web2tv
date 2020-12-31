@@ -216,13 +216,13 @@ if __name__ == '__main__':
                 print('Added channel: ' + str(channel_numbers[-1][0]))
 
         channel_dict['data'].append({
-            'channelName': grid['channels'][x]['name'], #name
-            'channelSlug': grid['channels'][x]['slug'], #slug
-            'channelHash': grid['channels'][x]['hash'], #hash
+            'channelName': fix(grid['channels'][x]['name']), #name
+            'channelSlug': fix(grid['channels'][x]['slug']), #slug
+            'channelHash': fix(grid['channels'][x]['hash']), #hash
             'channelNumber': grid['channels'][x]['number'], #number
-            'channelId': grid['channels'][x]['id'], #id
-            'channelSummary': grid['channels'][x]['summary'], #summary
-            'channelImage': grid['channels'][x]['images'][0]['url'], #logo
+            'channelId': fix(grid['channels'][x]['id']), #id
+            'channelSummary': fix(grid['channels'][x]['summary']), #summary
+            'channelImage': fix(grid['channels'][x]['images'][0]['url']), #logo
             'newNumber': newNumber })
         
         y = 0
@@ -450,7 +450,9 @@ if __name__ == '__main__':
             if streamlink == True:
                 m3u += '\n' + 'https://pluto.tv/live-tv/' + channel_list[x]['channelSlug']
             else:
+                #sid = str(channel_list[x]['channelNumber'])
                 cid = str(channel_list[x]['channelId'])
+                #print(number)
                 #print(cid)
                 
                 m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid=' + sid + '&deviceId=' + did + '&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true'
@@ -497,7 +499,7 @@ if __name__ == '__main__':
                 
                 #print(program_list[x]['episode_series_type'])
                 if program_list[x]['episode_series_type'] == 'tv':
-                    #episode numbering (how to improve this? ... slow)
+                    #episode numbering
                     temp = program_list[x]['episode_slug'].split('-')
                     se_tmp = str(program_list[x]['episode_number']).rsplit('0',1)
                     #print(temp)
