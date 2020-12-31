@@ -23,10 +23,10 @@ Additionally there are scripts which generate m3u lists as well as some helper s
 
 -Plex DVR (update_plexDVR.py)
 
-I am in the process of removing the use of urllib2 and making this fully functional in python 3.
+All scripts were tested using Python 3.8
 
 
-# m3u_modder (py -2)
+# m3u_modder
 description="Python script to convert m3u for use with streamlink."
 
 '-i', '--inFile', type=str, nargs=1, required=False, default=['streamlink.m3u'], help='Full input file filepath. Full file path can be specified. If only file name is specified then file will be used from the current working directory if it exists.'
@@ -35,7 +35,7 @@ description="Python script to convert m3u for use with streamlink."
 
 '-p', '--protocol', type=str, nargs=1, required=False, default=['httpstream://'], help='Stream url protocol.'
 
-# nextpvr (py -2)
+# nextpvr
 description="Python script to convert pluto tv channels into m3u format."
 
 -f', '--file', type=str, nargs=1, required=False, default=['nextpvr.m3u'], help='Full destination filepath. Default is nextpvr.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
@@ -55,7 +55,7 @@ description="Python script to convert pluto tv channels into m3u format."
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
 
 
-# plex (py -2)
+# plex
 description="Python script to convert plex livetv guide into xml/m3u format."
 
 '-t', '--token', type=str, nargs=1, required=True, help='Token is required. Follow Plex instructions for finding the token. https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/#toc-0')
@@ -89,7 +89,7 @@ description="Python script to convert plex livetv guide into xml/m3u format."
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
 
 
-# plutotv (py -2)
+# plutotv
 description="Python script to convert pluto tv guide into xml/m3u format."
 
 '-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 12.'
@@ -119,7 +119,7 @@ description="Python script to convert pluto tv guide into xml/m3u format."
 '--streamlink', action='store_true', required=False, help='Generate the stream urls for use with Streamlink.'
 
 
-# update_plexDVR (py -3)
+# update_plexDVR
 description="Python script to refresh Plex DVR guide(s)."
 
 '-u', '--uri', type=str, nargs=1, required=False, default=['http://127.0.0.1:32400'], help='Uri to access plex.'
