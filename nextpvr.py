@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import urllib2
-import json
+import requests
 
 if __name__ == '__main__':
     def quote_remover(string):
@@ -14,31 +13,24 @@ if __name__ == '__main__':
             string = string
         return string
 
-    def change_text(text): #https://stackoverflow.com/a/30320137/11214013
-        return text.encode('utf-8')  # assuming the encoding is UTF-8
-
     def get_number(channel):
         return channel.get('channelNumber')
 
-    def npvr_req(url, isJSON = True):
+    def doRequest5(method, isJSON = True):
         retval = False
-        result = None
-        url_a = url
-        if (not 'session.initiate' in url):
-            url_a += '&sid=' + sid
-            print('url_a: ' + url_a)
-        #print(url_a)
+        getResult = None
+        url = "http://" + ip + ":" + str(port) + '/service?method=' + method
+        if (not 'session.initiate' in method):
+            url += '&sid=' + sid
+        #print(url)
         try:
-            req = urllib2.Request(url_a, headers={"Accept" : "application/json"})
-            opener = urllib2.build_opener()
-            f = opener.open(req)
-            result = json.loads(f.read())
-            #print(result)
+            headers={"Accept" : "application/json"}
+            getResult = requests.get(url, headers=headers).json()
             retval = True
         except Exception as e:
             print(str(e))
 
-        return retval, result
+        return retval, getResult
 
     def hashMe (thedata):
         import hashlib
@@ -46,27 +38,15 @@ if __name__ == '__main__':
         h.update(thedata.encode('utf-8'))
         return h.hexdigest()
 
-    def npvr_login():
+    def sidLogin5():
         method = 'session.initiate&ver=1.0&device=emby'
-        ret, keys = npvr_req(url + method)
-        #print(ret)
-        #print(keys)
-        #ret, keys = doRequest5(method)
+        ret, keys = doRequest5(method)
         global sid
         if ret == True:
             sid =  keys['sid']
-            sid_s =  str(keys['sid'])
-            #print(sid)
-            #print('sid: ' + sid_s)
             salt = keys['salt']
-            salt_s = str(keys['salt'])
-            #print(salt)
-            #print('salt: ' + salt_s)
             method = 'session.login&md5=' + hashMe(':' + hashMe(pin) + ':' + salt)
-            #ret, login  = npvr_req(url + method)
-            ret, login  = npvr_req(url + method)
-            #print(ret)
-            #print(login)
+            ret, login  = doRequest5(method)
             if ret and login['stat'] == 'ok':
                 sid =  login['sid']
             else:
@@ -106,13 +86,9 @@ if __name__ == '__main__':
     #dictionary arrays to build
     channel_dict = {'data': []}
     
-    url_base = "http://" + ip + ":" + str(port)
-    url = url_base + '/service?method='
-    
-    page = npvr_login()
+    page = sidLogin5()
     method = 'channel.list'
-    url_channel = url + method
-    ret, grid = npvr_req(url_channel)
+    ret, grid = doRequest5(method)
     
     newNumber = startNumber
     #print(len(grid))
@@ -161,6 +137,9 @@ if __name__ == '__main__':
     channel_list.sort(key=get_number) #https://www.programiz.com/python-programming/methods/list/sort#:~:text=%20Python%20List%20sort%20%28%29%20%201%20sort,an%20optional%20argument.%20Setting%20reverse%20%3D...%20More%20
     #print(channel_list)
 
+    url_base = "http://" + ip + ":" + str(port)
+    url = url_base + '/service?method='
+
     if streamlink == True:
         url_prefix = 'httpstream://'
     else:
@@ -185,13 +164,14 @@ if __name__ == '__main__':
 
         x += 1
 
+    m3u += '\n'
+    
     print('m3u is ready to write')
     #print(m3u)
 
     #write the file
     file_handle = open(destination, "w")
     print('m3u is being created')
-    m3u = change_text(m3u)
     file_handle.write(m3u)
     print('m3u is being written')
     file_handle.close()

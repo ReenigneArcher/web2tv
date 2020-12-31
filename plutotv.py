@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import urllib2
+import requests
 import time
 from datetime import datetime, date
-import json
 import dateutil.parser
-import cgi
+import html
 import uuid
 
 #xml constants
@@ -26,10 +25,7 @@ if __name__ == '__main__':
         return string
     
     def load_json(url):
-        req = urllib2.Request(url)
-        opener = urllib2.build_opener()
-        f = opener.open(req)
-        result = json.loads(f.read())
+        result = requests.get(url=url, headers=headers).json()
         return result
     
     def isotime_convert(iso_time):
@@ -37,11 +33,11 @@ if __name__ == '__main__':
         result = time.strftime('%Y%m%d%H%M%S') #https://python.readthedocs.io/en/v2.7.2/library/datetime.html#datetime-objects
         return result
     
-    def change_text(text): #https://stackoverflow.com/a/30320137/11214013
-        return text.encode('utf-8')  # assuming the encoding is UTF-8
-    
     def fix(text):
-        text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
+        text = str(html.escape(text, quote=False).encode('ascii', 'xmlcharrefreplace'))[2:-1] #https://stackoverflow.com/a/1061702/11214013
+        return text.replace("\\'", "'")
+    
+    def fix2(text):
         return text
     
     def get_number(channel):
@@ -97,6 +93,10 @@ if __name__ == '__main__':
     print('streamlink: ' + str(streamlink))
     print('xml: ' + str(makeXML))
     print('m3u: ' + str(makeM3U))
+
+    headers = {
+            'Accept': 'application/json'
+        }
 
     #dictionary arrays to build
     channel_dict = {'data': []}
@@ -217,12 +217,18 @@ if __name__ == '__main__':
 
         channel_dict['data'].append({
             'channelName': fix(grid['channels'][x]['name']), #name
+            'channelName_2': fix2(grid['channels'][x]['name']), #name
             'channelSlug': fix(grid['channels'][x]['slug']), #slug
+            'channelSlug_2': fix2(grid['channels'][x]['slug']), #slug
             'channelHash': fix(grid['channels'][x]['hash']), #hash
+            'channelHash_2': fix2(grid['channels'][x]['hash']), #hash
             'channelNumber': grid['channels'][x]['number'], #number
             'channelId': fix(grid['channels'][x]['id']), #id
+            'channelId_2': fix2(grid['channels'][x]['id']), #id
             'channelSummary': fix(grid['channels'][x]['summary']), #summary
+            'channelSummary_2': fix2(grid['channels'][x]['summary']), #summary
             'channelImage': fix(grid['channels'][x]['images'][0]['url']), #logo
+            'channelImage_2': fix2(grid['channels'][x]['images'][0]['url']), #logo
             'newNumber': newNumber })
         
         y = 0
@@ -437,22 +443,21 @@ if __name__ == '__main__':
             if channel_list[x]['channelImage'] != '':
                 xml += '\n\t\t<icon src="' + channel_list[x]['channelImage'] + '" />'
             xml += '\n\t</channel>'
-            print(channel_list[x]['channelSlug'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
+            #print(channel_list[x]['channelSlug'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(channel_list)))
+            print(channel_list[x]['channelName'])
         if makeM3U == True:
-            m3u += '\n#EXTINF:-1 tvg-ID="PLUTO.TV.' + channel_list[x]['channelSlug']
-            m3u += '" CUID="' + str(channel_list[x]['channelId'])
+            m3u += '\n#EXTINF:-1 tvg-ID="PLUTO.TV.' + channel_list[x]['channelSlug_2']
+            m3u += '" CUID="' + str(channel_list[x]['channelId_2'])
             m3u += '" tvg-chno="' + str(channel_list[x]['newNumber'])
-            m3u += '" tvg-name="' + prefix + channel_list[x]['channelName']
+            m3u += '" tvg-name="' + prefix + channel_list[x]['channelName_2']
             if channel_list[x]['channelImage'] != '':
-                m3u += '" tvg-logo="' + channel_list[x]['channelImage']
-            m3u += '" group-title="PLUTO.TV",' + prefix + channel_list[x]['channelName']
+                m3u += '" tvg-logo="' + channel_list[x]['channelImage_2']
+            m3u += '" group-title="PLUTO.TV",' + prefix + channel_list[x]['channelName_2']
             
             if streamlink == True:
-                m3u += '\n' + 'https://pluto.tv/live-tv/' + channel_list[x]['channelSlug']
+                m3u += '\n' + 'https://pluto.tv/live-tv/' + channel_list[x]['channelSlug_2']
             else:
-                #sid = str(channel_list[x]['channelNumber'])
-                cid = str(channel_list[x]['channelId'])
-                #print(number)
+                cid = str(channel_list[x]['channelId_2'])
                 #print(cid)
                 
                 m3u += '\n' + 'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/' + cid + '/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid=' + sid + '&deviceId=' + did + '&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true'
@@ -477,7 +482,7 @@ if __name__ == '__main__':
                 xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLUTO.TV.' + program_list[x]['channelSlug'] + '">' #program,, start, and end time
                 
                 xml += '\n\t\t<desc lang="' + 'en' + '">' + program_list[x]['episode_description'] + '</desc>' #description/summary
-                xml += '\n\t\t<length units="seconds">' + str(program_list[x]['episode_duration'] / 1000) + '</length>' #duration/length
+                xml += '\n\t\t<length units="seconds">' + str(int(program_list[x]['episode_duration'] / 1000)) + '</length>' #duration/length
                 if timeAdded != "": #if timeAdded is not blank
                     xml += '\n\t\t<date>' + timeAdded + ' ' + offset + '</date>' #date
                 
@@ -489,7 +494,6 @@ if __name__ == '__main__':
                     print("---Cannot print this title due to SyntaxError: " + str(e))
                     time.sleep(2)
                 except UnicodeEncodeError as e:
-                    #print(change_text(program_list[x]['episode_series_name']) + ',_id: ' + program_list[x]['_id'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
                     print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
                     time.sleep(2)
                 
@@ -499,7 +503,7 @@ if __name__ == '__main__':
                 
                 #print(program_list[x]['episode_series_type'])
                 if program_list[x]['episode_series_type'] == 'tv':
-                    #episode numbering
+                    #episode numbering (how to improve this? ... slow)
                     temp = program_list[x]['episode_slug'].split('-')
                     se_tmp = str(program_list[x]['episode_number']).rsplit('0',1)
                     #print(temp)
@@ -592,31 +596,25 @@ if __name__ == '__main__':
 
     if makeXML == True:
         xml += '\n</tv>\n'
-        xml = xml.decode('unicode_escape').encode('utf-8')
+
         print('xml is ready to write')
         #print(xml)
-
-        #write the file
-        file_handle = open(xml_destination, "w")
-        print('xml is being created')
-        #xml = change_text(xml)
-        file_handle.write(xml)
-        print('xml is being written')
-        file_handle.close()
-        print('xml is being closed')
         
+        #write the file
+        print('xml is being created')
+        with open(xml_destination, "w") as f: #https://stackoverflow.com/a/42495690/11214013
+            f.write(xml)
+        print('xml has being written')
+
     if makeM3U == True:
         print('m3u is ready to write')
         #print(m3u)
 
         #write the file
-        file_handle = open(m3u_destination, "w")
         print('m3u is being created')
-        m3u = change_text(m3u)
-        file_handle.write(m3u)
-        print('m3u is being written')
-        file_handle.close()
-        print('m3u is being closed')
+        with open(m3u_destination, "w", encoding='utf-8') as f: #https://stackoverflow.com/a/42495690/11214013
+            f.write(m3u)
+        print('m3u has being written')
     
     if keyErrors_contentRating != []:
         print('...')

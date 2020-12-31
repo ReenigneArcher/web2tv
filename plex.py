@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import urllib2
+import requests
 import time
 from datetime import datetime, date
-import json
-import cgi
-import io
+import html
 
 #url variables
 type = '1%2C4'
 
 #xml constants
-source_info_url = '"https://epg.provider.plex.tv/"'
+source_info_url = '"https://www.plex.tv/watch-free-tv/"'
 source_info_name = '"plex.tv"'
 generator_info_name = '"web2tv"'
 generator_info_url = '"https://github.com/ReenigneArcher/web2tv"'
@@ -28,15 +26,11 @@ if __name__ == '__main__':
         return string
     
     def load_json(url):
-        req = urllib2.Request(url)
-        req.add_header("Accept",'application/json')
-        opener = urllib2.build_opener()
-        f = opener.open(req)
-        result = json.loads(f.read())
+        result = requests.get(url=url, headers=headers).json()
         return result
     
     def fix(text):
-        text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
+        text = html.escape(text, quote=False) #https://stackoverflow.com/a/1061702/11214013
         return text
     
     def get_number(stream):
@@ -99,6 +93,10 @@ if __name__ == '__main__':
     print('streamlink: ' + str(streamlink))
     print('xml: ' + str(makeXML))
     print('m3u: ' + str(makeM3U))
+    
+    headers = {
+            'Accept': 'application/json'
+        }
 
     #dictionary arrays to build
     channel_dict = {'data': []}
@@ -576,12 +574,10 @@ if __name__ == '__main__':
         #print(xml)
 
         #write the file
-        file_handle = open(xml_destination, "w")
         print('xml is being created')
-        file_handle.write(xml)
-        print('xml is being written')
-        file_handle.close()
-        print('xml is being closed')
+        with open(xml_destination, "w", encoding='utf-8') as f: #https://stackoverflow.com/a/42495690/11214013
+            f.write(xml)
+        print('xml has being written')
 
     if makeM3U == True:
         channel_numbers = []
@@ -637,8 +633,8 @@ if __name__ == '__main__':
         
         #write the file
         print('m3u is being created')
-        with io.open(m3u_destination, 'w', encoding='utf-8') as file:
-            file.write(m3u)
+        with open(m3u_destination, 'w', encoding='utf-8') as f: #https://stackoverflow.com/a/35086151/11214013
+            f.write(m3u)
         print('m3u is being closed')
 
     if keyErrors_contentRating != []:
