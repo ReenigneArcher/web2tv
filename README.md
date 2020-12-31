@@ -3,25 +3,19 @@ This project contains python scripts which load and parse tv guide information a
 
 Additionally there are scripts which generate m3u lists as well as some helper scripts.
 
+________________
 *EPG Generation*
-
--plex.tv (plex.py)
-
--pluto.tv (plutotv.py)
-
+- plex.tv (plex.py)
+- pluto.tv (plutotv.py)
+________________
 *M3U Generation*
-
--NextPVR (nextpvr.py)
-
--plex.tv (plex.py)
-
--pluto.tv (plutotv.py)
-
--m3u (convert m3u for use with Streamlink)
-
+- NextPVR (nextpvr.py)
+- plex.tv (plex.py)
+-  pluto.tv (plutotv.py)
+-  m3u (convert m3u for use with Streamlink)
+________________
 *Helper Scripts*
-
--Plex DVR (update_plexDVR.py)
+-  Plex DVR (update_plexDVR.py)
 
 All scripts were tested using Python 3.8
 
