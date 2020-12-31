@@ -34,12 +34,8 @@ if __name__ == '__main__':
         return result
     
     def fix(text):
-        #text = html.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
-        text = str(html.escape(text).encode('ascii', 'xmlcharrefreplace'))[2:-1] #https://stackoverflow.com/a/1061702/11214013
-        #text = html.escape(text) #https://stackoverflow.com/a/1061702/11214013
-        #print(type(text))
-        #print(text)
-        return text
+        text = str(html.escape(text, quote=False).encode('ascii', 'xmlcharrefreplace'))[2:-1] #https://stackoverflow.com/a/1061702/11214013
+        return text.replace("\\'", "'")
     
     def fix2(text):
         return text
@@ -486,7 +482,7 @@ if __name__ == '__main__':
                 xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLUTO.TV.' + program_list[x]['channelSlug'] + '">' #program,, start, and end time
                 
                 xml += '\n\t\t<desc lang="' + 'en' + '">' + program_list[x]['episode_description'] + '</desc>' #description/summary
-                xml += '\n\t\t<length units="seconds">' + str(program_list[x]['episode_duration'] / 1000) + '</length>' #duration/length
+                xml += '\n\t\t<length units="seconds">' + str(int(program_list[x]['episode_duration'] / 1000)) + '</length>' #duration/length
                 if timeAdded != "": #if timeAdded is not blank
                     xml += '\n\t\t<date>' + timeAdded + ' ' + offset + '</date>' #date
                 
