@@ -30,7 +30,7 @@ if __name__ == '__main__':
         return result
     
     def fix(text):
-        text = html.escape(text) #https://stackoverflow.com/a/1061702/11214013
+        text = html.escape(text, quote=False) #https://stackoverflow.com/a/1061702/11214013
         return text
     
     def get_number(stream):
