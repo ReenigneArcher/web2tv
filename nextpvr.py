@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import time
-from datetime import datetime, date
-import json
-import dateutil.parser
 import requests
 
 if __name__ == '__main__':
@@ -16,57 +12,48 @@ if __name__ == '__main__':
         else:
             string = string
         return string
-    
-    def find_between_split(s, start, end):
-        try:
-            return (s.split(start))[1].split(end)[0]
-        except IndexError:
-            return ""
-
-    def GetListOfSubstrings(stringSubject,string1,string2):
-        MyList = []
-        intstart=0
-        strlength=len(stringSubject)
-        continueloop = 1
-        while(intstart < strlength and continueloop == 1):
-            intindex1=stringSubject.find(string1,intstart)
-            if(intindex1 != -1): #The substring was found, lets proceed
-                intindex1 = intindex1+len(string1)
-                intindex2 = stringSubject.find(string2,intindex1)
-                if(intindex2 != -1):
-                    subsequence=stringSubject[intindex1:intindex2]
-                    MyList.append(subsequence)
-                    intstart=intindex2+len(string2)
-                else:
-                    continueloop=0
-            else:
-                continueloop=0
-        return MyList
-
-
-    def load_url(url: str):
-        url_source = ""
-        response = requests.get(url=url)
-        if response:
-            url_source = response.text
-        return url_source.replace('\t', '')  # remove tabs
-
-
-    def load_json(url: str):
-        response = requests.get(url=url)
-        return response.json()
-    
-    def isotime_convert(iso_time):
-        time = dateutil.parser.isoparse(iso_time) #https://stackoverflow.com/a/15228038/11214013
-        result = time.strftime('%Y%m%d%H%M%S') #https://python.readthedocs.io/en/v2.7.2/library/datetime.html#datetime-objects
-        return result
-    
-    def change_text(text): #https://stackoverflow.com/a/30320137/11214013
-        return text.encode('utf-8')  # assuming the encoding is UTF-8
 
     def get_number(channel):
         return channel.get('channelNumber')
-    
+
+    def doRequest5(method, isJSON = True):
+        retval = False
+        getResult = None
+        url = "http://" + ip + ":" + str(port) + '/service?method=' + method
+        if (not 'session.initiate' in method):
+            url += '&sid=' + sid
+        #print(url)
+        try:
+            headers={"Accept" : "application/json"}
+            getResult = requests.get(url, headers=headers).json()
+            retval = True
+        except Exception as e:
+            print(str(e))
+
+        return retval, getResult
+
+    def hashMe (thedata):
+        import hashlib
+        h = hashlib.md5()
+        h.update(thedata.encode('utf-8'))
+        return h.hexdigest()
+
+    def sidLogin5():
+        method = 'session.initiate&ver=1.0&device=emby'
+        ret, keys = doRequest5(method)
+        global sid
+        if ret == True:
+            sid =  keys['sid']
+            salt = keys['salt']
+            method = 'session.login&md5=' + hashMe(':' + hashMe(pin) + ':' + salt)
+            ret, login  = doRequest5(method)
+            if ret and login['stat'] == 'ok':
+                sid =  login['sid']
+            else:
+                print ("Fail")
+        else:
+            print ("Fail")
+
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv channels into m3u format.", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-f', '--file', type=str, nargs=1, required=False, default=['nextpvr.m3u'], help='Full destination filepath. Default is nextpvr.m3u. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
@@ -99,65 +86,9 @@ if __name__ == '__main__':
     #dictionary arrays to build
     channel_dict = {'data': []}
     
-    url_base = "http://" + ip + ":" + str(port)
-    url = url_base + '/service?method='
-    
-    def npvr_req(url, isJSON = True):
-        retval = False
-        result = None
-        url_a = url
-        if (not 'session.initiate' in url):
-            url_a += '&sid=' + sid
-            print('url_a: ' + url_a)
-        #print(url_a)
-        try:
-            response = requests.get(url=url_a, headers={"Accept" : "application/json"})
-            result = response.json()
-            #print(result)
-            retval = True
-        except Exception as e:
-            print(str(e))
-
-        return retval, result
-    
-    def hashMe (thedata):
-        import hashlib
-        h = hashlib.md5()
-        h.update(thedata.encode('utf-8'))
-        return h.hexdigest()
-    
-    def npvr_login():
-        method = 'session.initiate&ver=1.0&device=emby'
-        ret, keys = npvr_req(url + method)
-        #print(ret)
-        #print(keys)
-        #ret, keys = doRequest5(method)
-        global sid
-        if ret == True:
-            sid =  keys['sid']
-            sid_s =  str(keys['sid'])
-            #print(sid)
-            #print('sid: ' + sid_s)
-            salt = keys['salt']
-            salt_s = str(keys['salt'])
-            #print(salt)
-            #print('salt: ' + salt_s)
-            method = 'session.login&md5=' + hashMe(':' + hashMe(pin) + ':' + salt)
-            #ret, login  = npvr_req(url + method)
-            ret, login  = npvr_req(url + method)
-            #print(ret)
-            #print(login)
-            if ret and login['stat'] == 'ok':
-                sid =  login['sid']
-            else:
-                print ("Fail")
-        else:
-            print ("Fail")
-    
-    page = npvr_login()
+    page = sidLogin5()
     method = 'channel.list'
-    url_channel = url + method
-    ret, grid = npvr_req(url_channel)
+    ret, grid = doRequest5(method)
     
     newNumber = startNumber
     #print(len(grid))
@@ -206,6 +137,9 @@ if __name__ == '__main__':
     channel_list.sort(key=get_number) #https://www.programiz.com/python-programming/methods/list/sort#:~:text=%20Python%20List%20sort%20%28%29%20%201%20sort,an%20optional%20argument.%20Setting%20reverse%20%3D...%20More%20
     #print(channel_list)
 
+    url_base = "http://" + ip + ":" + str(port)
+    url = url_base + '/service?method='
+
     if streamlink == True:
         url_prefix = 'httpstream://'
     else:
@@ -230,13 +164,14 @@ if __name__ == '__main__':
 
         x += 1
 
+    m3u += '\n'
+    
     print('m3u is ready to write')
     #print(m3u)
 
     #write the file
     file_handle = open(destination, "w")
     print('m3u is being created')
-    m3u = change_text(m3u)
     file_handle.write(m3u)
     print('m3u is being written')
     file_handle.close()
