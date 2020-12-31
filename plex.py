@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import requests
 import time
 from datetime import datetime, date
-import cgi
-import requests
+import html
 
 #url variables
 type = '1%2C4'
 
 #xml constants
-source_info_url = '"https://epg.provider.plex.tv/"'
+source_info_url = '"https://www.plex.tv/watch-free-tv/"'
 source_info_name = '"plex.tv"'
 generator_info_name = '"web2tv"'
 generator_info_url = '"https://github.com/ReenigneArcher/web2tv"'
@@ -25,12 +25,12 @@ if __name__ == '__main__':
             string = string
         return string
     
-    def load_json(url: str):
-        res = requests.get(url=url, headers={'Accept': 'application/json'})
-        return res.json()
+    def load_json(url):
+        result = requests.get(url=url, headers=headers).json()
+        return result
     
     def fix(text):
-        text = cgi.escape(text).encode('ascii', 'xmlcharrefreplace') #https://stackoverflow.com/a/1061702/11214013
+        text = html.escape(text) #https://stackoverflow.com/a/1061702/11214013
         return text
     
     def get_number(stream):
@@ -93,6 +93,10 @@ if __name__ == '__main__':
     print('streamlink: ' + str(streamlink))
     print('xml: ' + str(makeXML))
     print('m3u: ' + str(makeM3U))
+    
+    headers = {
+            'Accept': 'application/json'
+        }
 
     #dictionary arrays to build
     channel_dict = {'data': []}
@@ -394,13 +398,17 @@ if __name__ == '__main__':
                 endsAt = grid['MediaContainer']['Metadata'][y]['Media'][z]['endsAt']
                 channelVcn = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelVcn'])
                 channelIdentifier = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelIdentifier'])
+                channelIdentifier_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelIdentifier']
                 channelTitle = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelTitle'])
                 channelThumb = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelThumb'])
+                channelThumb_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelThumb']
                 duration = grid['MediaContainer']['Metadata'][y]['Media'][z]['duration']
                 channelArt = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelArt'])
+                channelArt_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelArt']
                 videoResolution =  fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['videoResolution'])
                 id = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['id'])
                 channelShortTitle = fix(grid['MediaContainer']['Metadata'][y]['Media'][z]['channelShortTitle'])
+                channelShortTitle_2 = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelShortTitle']
                 
                 if makeXML == True:
                     if duration > 0: #only add programs with a defined duration
@@ -442,11 +450,11 @@ if __name__ == '__main__':
                         stream_dict['data'].append({
                             'streamKey': streamKey,
                             'streamTitle': channelTitle, #vcn + short title
-                            'streamIdentifier': channelIdentifier, #key
-                            'streamShortTitle': channelShortTitle, #friendly name
+                            'streamIdentifier': channelIdentifier_2, #key
+                            'streamShortTitle': channelShortTitle_2, #friendly name
                             'streamVcn': channelVcn, #number
-                            'streamArt': channelArt, #number
-                            'streamThumb': channelThumb}) #icon
+                            'streamArt': channelArt_2, #artwork
+                            'streamThumb': channelThumb_2}) #icon
                         
                         w += 1
                 z += 1
@@ -566,12 +574,10 @@ if __name__ == '__main__':
         #print(xml)
 
         #write the file
-        file_handle = open(xml_destination, "w")
         print('xml is being created')
-        file_handle.write(xml)
-        print('xml is being written')
-        file_handle.close()
-        print('xml is being closed')
+        with open(xml_destination, "w", encoding='utf-8') as f: #https://stackoverflow.com/a/42495690/11214013
+            f.write(xml)
+        print('xml has being written')
 
     if makeM3U == True:
         channel_numbers = []
@@ -607,8 +613,7 @@ if __name__ == '__main__':
                     channel_numbers.append([str(newNumber)])
                     print('Added channel: ' + str(channel_numbers[-1][0]))
         
-        
-            m3u += '\n#EXTINF:-1 tvg-ID="PLEX.TV.' + stream_list[x]['streamShortTitle']
+            m3u += '\n#EXTINF:-1 tvg-ID="PLEX.TV.' + stream_list[x]['streamShortTitle'].replace(' ', '.')
             m3u += '" CUID="' + str(stream_list[x]['streamIdentifier'])
             m3u += '" tvg-chno="' + str(newNumber)
             m3u += '" tvg-name="' + prefix + stream_list[x]['streamShortTitle']
@@ -625,15 +630,13 @@ if __name__ == '__main__':
         
         print('m3u is ready to write')
         #print(m3u)
-
+        
         #write the file
-        file_handle = open(m3u_destination, "w")
         print('m3u is being created')
-        file_handle.write(m3u)
-        print('m3u is being written')
-        file_handle.close()
+        with open(m3u_destination, 'w', encoding='utf-8') as f: #https://stackoverflow.com/a/35086151/11214013
+            f.write(m3u)
         print('m3u is being closed')
-    
+
     if keyErrors_contentRating != []:
         print('...')
         print('The following content rating key_errors were found. :' +str(keyErrors_contentRating))
