@@ -499,7 +499,10 @@ if __name__ == '__main__':
             xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLEX.TV.' + program_list[x]['channelShortTitle'].replace(' ', '.') + '">' #program,, start, and end time
             
             xml += '\n\t\t<title lang="' + x_plex_language + '">' + program_list[x]['title'] + '</title>' #title
-            print(program_list[x]['title'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
+            try:
+                print(program_list[x]['title'] + ',ratingKey: ' + program_list[x]['ratingKey'] + ' will be added to the xml.' + str(x+1) + '/' + str(len(program_list)))
+            except UnicodeEncodeError as e: #this is needed in the event the console doesn't support certain unicode symbols
+                print("Cannot print this item due to UnicodeEncodeError: " + str(e))
             
             xml += '\n\t\t<desc lang="' + x_plex_language + '">' + program_list[x]['summary'] + '</desc>' #description/summary
             xml += '\n\t\t<length units="seconds">' + str(program_list[x]['duration']) + '</length>' #duration/length
