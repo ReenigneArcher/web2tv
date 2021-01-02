@@ -492,10 +492,10 @@ if __name__ == '__main__':
                     print('   Airing: ' + str(x+1) + '/' + str(len(program_list)) + ' will be added to the xml... ' + program_list[x]['episode_series_name'] + ',_id: ' + program_list[x]['_id'])
                 except SyntaxError as e:
                     print("---Cannot print this title due to SyntaxError: " + str(e))
-                    time.sleep(2)
+                    #time.sleep(2)
                 except UnicodeEncodeError as e:
                     print("---Cannot print this title due to UnicodeEncodeError: " + str(e))
-                    time.sleep(2)
+                    #time.sleep(2)
                 
                 if program_list[x]['episode_name'] != program_list[x]['episode_series_name']: #if not equal
                     xml += '\n\t\t<sub-title lang="' + 'en' + '">' + program_list[x]['episode_name'] + '</sub-title>' #sub-title/tagline
