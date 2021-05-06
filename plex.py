@@ -45,7 +45,6 @@ if __name__ == '__main__':
     
     #xml arguments
     parser.add_argument('-x', '--xmlFile', type=str, nargs=1, required=False, default=['plex2.xml'], help='Full destination filepath for xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
-    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.')
     parser.add_argument('--xml', action='store_true', required=False, help='Generate the xml file.')
     
     #m3u arguments
@@ -61,7 +60,6 @@ if __name__ == '__main__':
     #string agruments
     x_plex_token = quote_remover(opts.token[0])
     x_plex_language = quote_remover(opts.language[0])
-    offset = quote_remover(opts.offset[0])
     xml_destination = quote_remover(opts.xmlFile[0])
     m3u_destination = quote_remover(opts.m3uFile[0])
     prefix = quote_remover(opts.prefix[0])
@@ -85,7 +83,6 @@ if __name__ == '__main__':
     print('language: ' + x_plex_language)
     print('days: ' + str(days_future))
     print('pastdays: ' + str(days_past))
-    print('offset: ' + offset)
     print('xmlFile: ' + xml_destination)
     print('m3uFile: ' + m3u_destination)
     print('startNumber: ' + str(startNumber))
@@ -491,10 +488,12 @@ if __name__ == '__main__':
 
         x = 0
         while x < len(program_list): #do this for each program
-            timeStart = str(datetime.fromtimestamp(int(program_list[x]['beginsAt']))).replace('-', '').replace(':', '').replace(' ', '')
-            timeEnd = str(datetime.fromtimestamp(int(program_list[x]['endsAt']))).replace('-', '').replace(':', '').replace(' ', '')
-            timeAdded = str(datetime.fromtimestamp(int(program_list[x]['addedAt']))).replace('-', '').replace(':', '').replace(' ', '')
-            timeOriginal = program_list[x]['originallyAvailableAt'].replace('-', '').replace(':', '').replace('T', '').replace('Z', '')
+            timeStart = datetime.utcfromtimestamp(int(program_list[x]['beginsAt'])).strftime('%Y%m%d%H%M%S')
+            timeEnd = datetime.utcfromtimestamp(int(program_list[x]['endsAt'])).strftime('%Y%m%d%H%M%S')
+            timeAdded = datetime.utcfromtimestamp(int(program_list[x]['addedAt'])).strftime('%Y%m%d%H%M%S')
+            timeOriginal = datetime.fromisoformat(program_list[x]['originallyAvailableAt'].replace('Z', '')).strftime('%Y%m%d%H%M%S')
+            
+            offset = '+0000'
             
             xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLEX.TV.' + program_list[x]['channelShortTitle'].replace(' ', '.') + '">' #program,, start, and end time
             
