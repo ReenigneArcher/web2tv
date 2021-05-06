@@ -64,8 +64,6 @@ description="Python script to convert plex livetv guide into xml/m3u format."
 
 '-x', '--xmlFile', type=str, nargs=1, required=False, default=['plex2.xml'], help='Full destination filepath for xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
 
-'-o', '--offset', type=str, nargs=1, required=False, default=['+0000'], help='Timezone offset. Enter "-0500" for EST.'
-
 '--xml', action='store_true', required=False, help='Generate the xml file.'
     
 #m3u arguments
