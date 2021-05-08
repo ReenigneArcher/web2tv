@@ -4,6 +4,7 @@ import argparse
 import requests
 import time
 from datetime import datetime, date
+import dateutil.parser
 import html
 
 #url variables
@@ -27,6 +28,11 @@ if __name__ == '__main__':
     
     def load_json(url):
         result = requests.get(url=url, headers=headers).json()
+        return result
+    
+    def isotime_convert(iso_time):
+        time = dateutil.parser.isoparse(iso_time) #https://stackoverflow.com/a/15228038/11214013
+        result = time.strftime('%Y%m%d%H%M%S') #https://python.readthedocs.io/en/v2.7.2/library/datetime.html#datetime-objects
         return result
     
     def fix(text):
@@ -491,7 +497,7 @@ if __name__ == '__main__':
             timeStart = datetime.utcfromtimestamp(int(program_list[x]['beginsAt'])).strftime('%Y%m%d%H%M%S')
             timeEnd = datetime.utcfromtimestamp(int(program_list[x]['endsAt'])).strftime('%Y%m%d%H%M%S')
             timeAdded = datetime.utcfromtimestamp(int(program_list[x]['addedAt'])).strftime('%Y%m%d%H%M%S')
-            timeOriginal = datetime.fromisoformat(program_list[x]['originallyAvailableAt'].replace('Z', '')).strftime('%Y%m%d%H%M%S')
+            timeOriginal = isotime_convert(program_list[x]['originallyAvailableAt'])
             
             offset = '+0000'
             

@@ -46,11 +46,9 @@ if __name__ == '__main__':
     #argparse
     parser = argparse.ArgumentParser(description="Python script to convert pluto tv guide into xml/m3u format.", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 12.')
-    parser.add_argument('-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.')
     
     #xml arguments
     parser.add_argument('-x', '--xmlFile', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
-    parser.add_argument('-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used to correct times in final xml file. Not needed during initial testing.')
     parser.add_argument('--xml', action='store_true', required=False, help='Generate the xml file.')
     
     #m3u arguments
@@ -64,8 +62,6 @@ if __name__ == '__main__':
     opts = parser.parse_args()
     
     #string agruments
-    offset = quote_remover(opts.offset[0])
-    timezone = quote_remover(opts.timezone[0])
     xml_destination = quote_remover(opts.xmlFile[0])
     m3u_destination = quote_remover(opts.m3uFile[0])
     prefix = quote_remover(opts.prefix[0])
@@ -83,8 +79,6 @@ if __name__ == '__main__':
     streamlink = opts.streamlink
     
     print('hours: ' + str(epg_hours))
-    print('offset: ' + offset)
-    print('timezone: ' + timezone)
     print('xmlFile: ' + xml_destination)
     print('m3uFile: ' + m3u_destination)
     print('prefix: ' + prefix)
@@ -176,15 +170,16 @@ if __name__ == '__main__':
     day = 24 * 60 * 60
     hour = 60 * 60
     half_hour = 60 * 60 / 2
+    timezone = '-0000'
     timezone = timezone[:-2] + ':' + timezone[-2:]
 
     now = time.time()
     now = int(now)
     now_30 = now - (now % half_hour) #go back to nearest 30 minutes
-    epg_begin = str(datetime.fromtimestamp(now_30)).replace(' ', 'T') + timezone
+    epg_begin = str(datetime.utcfromtimestamp(now_30)).replace(' ', 'T') + timezone
 
     epg_end = (epg_hours * hour) + now_30 + half_hour
-    epg_end = str(datetime.fromtimestamp(epg_end)).replace(' ', 'T') + timezone
+    epg_end = str(datetime.utcfromtimestamp(epg_end)).replace(' ', 'T') + timezone
 
     print('Loading Grid for PlutoTV')
     
@@ -474,10 +469,7 @@ if __name__ == '__main__':
                 timeAdded = isotime_convert(program_list[x]['episode_clip_originalReleaseDate'])
                 timeOriginal = isotime_convert(program_list[x]['episode_firstAired'])
                 
-                #print(timeStart)
-                #print(timeEnd)
-                #print(timeAdded)
-                #print(timeOriginal)
+                offset = '+0000'
                 
                 xml += '\n\t<programme start="' + timeStart + ' ' + offset + '" stop="' + timeEnd + ' ' + offset + '" channel="PLUTO.TV.' + program_list[x]['channelSlug'] + '">' #program,, start, and end time
                 

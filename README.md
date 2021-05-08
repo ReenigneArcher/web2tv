@@ -86,13 +86,9 @@ description="Python script to convert pluto tv guide into xml/m3u format."
 
 '-e', '--epgHours', type=int, nargs=1, required=False, default=[10], help='Hours of EPG to collect. Pluto.TV only provides a few hours of EPG. Max allowed is 12.'
 
-'-t', '--timezone', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used when grabbing guide data from pluto.tv.'
-    
 #xml arguments
 
 '-x', '--xmlFile', type=str, nargs=1, required=False, default=['plutotv.xml'], help='Full destination filepath. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.'
-
-'-o', '--offset', type=str, nargs=1, required=False, default=['-0000'], help='Timezone offset. Enter "-0500" for EST. Used to correct times in final xml file. Not needed during initial testing.'
 
 '--xml', action='store_true', required=False, help='Generate the xml file.'
     
