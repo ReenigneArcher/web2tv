@@ -9,7 +9,7 @@ import html
 import xml.etree.ElementTree as ET
 
 urls_expire_after = {
-    '*/library/metadata/*': 60 * 60 * 12,
+    '*/library/metadata/*': 60 * 60 * 48,
     '*': 0,  # Every other non-matching URL: do not cache
 }
 
