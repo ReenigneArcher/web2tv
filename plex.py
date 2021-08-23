@@ -282,9 +282,9 @@ def main():
                     stream_data = {
                         'tvg-ID': f"PLEX.TV.{channel_data['short_title'].replace(' ', '.')}",
                         'CUID': channel_data['id'],
-                        'tvg-name': channel_data['short_title'],
+                        'tvg-name': f"{args.prefix}{channel_data['short_title']}",
                         'tvg-logo': channel_data['thumb'],
-                        'group-title': f'"PLEX.TV",{channel_data["short_title"]}',
+                        'group-title': f'"PLEX.TV",{args.prefix}{channel_data["short_title"]}',
                         'url': f"https://epg.provider.plex.tv/library/parts/{channel_data['id']}?X-Plex-Token={args.token}"
                     }
 
