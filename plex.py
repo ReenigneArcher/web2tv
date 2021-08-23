@@ -449,7 +449,10 @@ def main():
             f.write('<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'.encode('utf-8'))
 
             new_xml = ET.ElementTree(xml_tv)
-            ET.indent(new_xml, space="\t", level=0)
+            try:
+                ET.indent(new_xml, space="\t", level=0)
+            except AttributeError:
+                print('Warning: Upgrade to Python 3.9 to have indented xml')
             new_xml.write(f, encoding='utf-8')
 
         print('xml has being written')
