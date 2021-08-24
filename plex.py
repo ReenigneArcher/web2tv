@@ -8,13 +8,6 @@ import html
 
 import xml.etree.ElementTree as ET
 
-urls_expire_after = {
-    '*/library/metadata/*': 60 * 60 * 48,
-    '*': 0,  # Every other non-matching URL: do not cache
-}
-
-requests_cache.install_cache('cache/web2tv', backend='sqlite', urls_expire_after=urls_expire_after)
-
 # url constants
 url_type = '1%2C4'
 
@@ -86,6 +79,21 @@ rating_logo = {
     'ur': 'http://3.bp.blogspot.com/-eyIrE_lKiMg/Ufbis7lWLlI/AAAAAAAAAK4/4XTYHCU8Dx4/s1600/ur+logo.png'
 }
 
+xml_video_dict = {
+    '480': {
+        'aspect': '16:9',
+        'quality': 'SD'
+    },
+    '720': {
+        'aspect': '16:9',
+        'quality': 'HDTV'
+    },
+    '1080': {
+        'aspect': '16:9',
+        'quality': 'HDTV'
+    }
+}
+
 
 def get_args():
     # argparse
@@ -99,11 +107,20 @@ def get_args():
                         help='Days in past of info to collect. Max is 1.')
     parser.add_argument('-l', '--language', type=str, required=False, default='en',
                         help='Plex language... Get from url same as token.')
+    parser.add_argument('--number_as_name', action='store_true', required=False,
+                        help='Use the channel number as the name and id. Improves channel display in Plex Media Server.')
 
     # xml arguments
     parser.add_argument('-x', '--xmlFile', type=str, required=False, default='plex2.xml',
-                        help='Full destination filepath for xml. Full file path can be specified. If only file name is specified then file will be placed in the current working directory.')
+                        help='Full destination filepath for xml. Full file path can be specified. If only file name '
+                             'is specified then file will be placed in the current working directory.')
     parser.add_argument('--xml', action='store_true', required=False, help='Generate the xml file.')
+    parser.add_argument('--long_date', action='store_true', required=False,
+                        help='Use longer date format. Do not use for Plex Media Server.')
+    parser.add_argument('--extended_metadata', action='store_true', required=False,
+                        help='Use to get genres for each item. Results in significant API calls.')
+    parser.add_argument('--cache_days', type=int, required=False, default=2,
+                        help='Use to get genres for each item. Results in significant API calls.')
 
     # m3u arguments
     parser.add_argument('-m', '--m3uFile', type=str, required=False, default='plex2.m3u',
@@ -133,25 +150,22 @@ def load_json(url, data=headers):
     return result
 
 
-def isotime_convert(iso_time):
+def isotime_convert(iso_time, short=True):
     time_value = dateutil.parser.isoparse(iso_time)  # https://stackoverflow.com/a/15228038/11214013
-    result = time_value.strftime('%Y%m%d%H%M%S')
+    if not short:
+        result = time_value.strftime('%Y%m%d%H%M%S')
+    else:
+        result = time_value.strftime('%Y%m%d')
     return result
-
-
-def fix(text):
-    text = html.escape(text, quote=False)  # https://stackoverflow.com/a/1061702/11214013
-    return text
-
 
 def main():
     args = get_args()
 
     # dictionary arrays to build
-    channel_dict = {'data': []}
+    channel_dict = {'data_test': [], 'data': []}
     program_dict = {'data': []}
     item_dict = {}
-    stream_dict = {'data': []}
+    stream_dict = {'data_test': [], 'data': []}
 
     keyErrors_contentRating = []
     errorDetails_contentRating = []
@@ -194,20 +208,20 @@ def main():
                 try:
                     for image in grid['MediaContainer']['Metadata'][y]['Image']:
                         if image['type'] == 'coverPoster':
-                            metadata_data['thumb'] = fix(image['url'])
+                            metadata_data['thumb'] = image['url']
                             break
                 except KeyError:
                     metadata_data['thumb'] = False
 
             if not metadata_data['thumb']:  # try to get thumb from grandparentthumb
                 try:
-                    metadata_data['thumb'] = fix(grid['MediaContainer']['Metadata'][y]['grandparentThumb'])
+                    metadata_data['thumb'] = grid['MediaContainer']['Metadata'][y]['grandparentThumb']
                 except KeyError:
                     metadata_data['thumb'] = False
 
             if not metadata_data['thumb']:  # try to get thumb from thumb
                 try:
-                    metadata_data['thumb'] = fix(grid['MediaContainer']['Metadata'][y]['thumb'])
+                    metadata_data['thumb'] = grid['MediaContainer']['Metadata'][y]['thumb']
                 except KeyError:
                     metadata_data['thumb'] = False
 
@@ -258,38 +272,55 @@ def main():
 
                 if channel_data['title'] == 'undefined':
                     try:
-                        channel_data['title'] = fix(
-                            grid['MediaContainer']['Metadata'][y]['Media'][z]['channelCallSign'])
+                        channel_data['title'] = grid['MediaContainer']['Metadata'][y]['Media'][z]['channelCallSign']
                     except KeyError:
                         pass
 
-                if channel_data not in channel_dict['data']:
-                    channel_dict['data'].append(channel_data)
+                if channel_data not in channel_dict['data_test']:
+                    channel_dict['data_test'].append(dict(channel_data))  # put into test without channel number
+
+                    channel_data['channel_number'] = int(args.startNumber) - 1 + len(channel_dict['data_test'])
+                    channel_dict['data'].append(dict(channel_data))  # put into data with channel number
+
+                else:
+                    counter = 0
+                    for channel in channel_dict['data_test']:
+                        if channel == channel_data:
+                            channel_data['channel_number'] = int(args.startNumber) + counter
+                        counter += 1
 
                 if args.xml:
                     program_data = {'metadata': metadata_data}
                     program_data['metadata']['begins_at'] = grid['MediaContainer']['Metadata'][y]['Media'][z]['beginsAt']
                     program_data['metadata']['premiere'] = grid['MediaContainer']['Metadata'][y]['Media'][z]['premiere']
                     program_data['metadata']['ends_at'] = grid['MediaContainer']['Metadata'][y]['Media'][z]['endsAt']
-                    program_data['metadata']['duration'] = grid['MediaContainer']['Metadata'][y]['Media'][z]['duration']
+                    program_data['metadata']['duration'] = int(grid['MediaContainer']['Metadata'][y]['Media'][z]['duration'] / 1000)
                     program_data['metadata']['resolution'] = grid['MediaContainer']['Metadata'][y]['Media'][z]['videoResolution']
                     program_data['metadata']['channel_data'] = channel_data
 
                     if program_data['metadata'] not in program_dict['data']:
-                        program_dict['data'].append(program_data['metadata'])
+                        program_dict['data'].append(dict(program_data['metadata']))
 
                 if args.m3u:
                     stream_data = {
-                        'tvg-ID': f"PLEX.TV.{channel_data['short_title'].replace(' ', '.')}",
                         'CUID': channel_data['id'],
-                        'tvg-name': f"{args.prefix}{channel_data['short_title']}",
                         'tvg-logo': channel_data['thumb'],
                         'group-title': f'"PLEX.TV",{args.prefix}{channel_data["short_title"]}',
                         'url': f"https://epg.provider.plex.tv/library/parts/{channel_data['id']}?X-Plex-Token={args.token}"
                     }
 
-                    if stream_data not in stream_dict['data']:
-                        stream_dict['data'].append(stream_data)
+                    if stream_data not in stream_dict['data_test']:
+                        stream_dict['data_test'].append(dict(stream_data))  # put into test without channel number
+
+                        if args.number_as_name:
+                            stream_data['tvg-name'] = f"{channel_data['channel_number']}"
+                            stream_data['tvg-ID'] = f"{channel_data['channel_number']}"
+                        else:
+                            stream_data['tvg-name'] = f"{args.prefix}{channel_data['short_title']}"
+                            stream_data['tvg-ID'] = f"{args.prefix}{channel_data['short_title']}"
+
+                        stream_data['tvg-chno'] = f"{channel_data['channel_number']}"
+                        stream_dict['data'].append(dict(stream_data))  # put into data with channel number
 
                 z += 1
             y += 1
@@ -299,32 +330,39 @@ def main():
         xml_tv = ET.Element("tv", xml_constants)
 
         for channel in channel_dict['data']:
-            xml_channel = ET.SubElement(xml_tv, "channel", {"id": f"PLEX.TV.{channel['short_title'].replace(' ', '.')}"})
+            if args.number_as_name:
+                xml_channel = ET.SubElement(xml_tv, "channel", {"id": f"{channel['channel_number']}"})
 
-            display_names_types = ['short_title', 'title', 'id']
+            else:
+                xml_channel = ET.SubElement(xml_tv, "channel", {"id": f"{args.prefix}{channel['short_title']}"})
+            ET.SubElement(xml_channel, "display-name").text = f"{args.prefix}{channel['short_title']}"
+
+            display_names_types = ['title', 'id']
             display_names = []
             for display_name_type in display_names_types:
                 try:
                     if channel[display_name_type] not in display_names:
                         display_names.append(channel[display_name_type])
-                        ET.SubElement(xml_channel, "display-name").text = channel[display_name_type]
+                        ET.SubElement(xml_channel, "display-name").text = f'{channel[display_name_type]}'
                 except KeyError:
                     pass
 
-            ET.SubElement(xml_channel, "icon").text = channel['thumb']
+            ET.SubElement(xml_channel, "icon", {'src': channel['thumb']})
 
         for program in program_dict['data']:
             time_start = datetime.utcfromtimestamp(int(program['begins_at'])).strftime('%Y%m%d%H%M%S')
             time_end = datetime.utcfromtimestamp(int(program['ends_at'])).strftime('%Y%m%d%H%M%S')
             time_added = datetime.utcfromtimestamp(int(program['added_at'])).strftime('%Y%m%d%H%M%S')
-            time_original = isotime_convert(program['originally_available_at'])
+            time_original_long = isotime_convert(program['originally_available_at'], short=False)
+            time_original_short = isotime_convert(program['originally_available_at'], short=True)
 
             offset = '+0000'
 
             program_header_dict = {
                 'start': f'{time_start} {offset}',
                 'stop': f'{time_end} {offset}',
-                'channel': f"PLEX.TV.{program['channel_data']['short_title'].replace(' ', '.')}"
+                'channel': f"{program['channel_data']['channel_number']}"
+                #'channel': f"{args.prefix}{program['channel_data']['short_title']}"
             }
 
             xml_program = ET.SubElement(xml_tv, "programme", program_header_dict)
@@ -345,10 +383,14 @@ def main():
             except KeyError:
                 pass
 
-            if time_original != '':
-                ET.SubElement(xml_program, "date").text = f'{time_original} {offset}'
+            if time_original_long != '' and args.long_date:
+                time_original = f'{time_original_long} {offset}'
+            elif time_original_short != '':
+                time_original = time_original_short
             else:
-                ET.SubElement(xml_program, "date").text = str(program['year'])
+                time_original = str(program['year'])
+
+            ET.SubElement(xml_program, "date").text = time_original
 
             try:
                 ET.SubElement(xml_program, "sub-title", {'lang': args.language}).text = program['sub_title']
@@ -385,12 +427,12 @@ def main():
                     if number == 'season_number':
                         onscreen_ns = f'S{program[number]}'
                         common_ns = f'S{program[number]}'
-                        xmltv_ns = f'{program[number]}'
+                        xmltv_ns = f'{int(program[number]) - 1}'
                     else:
                         if season_found:
                             onscreen_ns = f'{onscreen_ns}E{program[number]}'
                             common_ns = f'{common_ns}E{program[number]}'
-                            xmltv_ns = f'{xmltv_ns}.{program[number]}'
+                            xmltv_ns = f'{xmltv_ns}.{int(program[number]) -1}.'
                 except KeyError:
                     pass
 
@@ -413,21 +455,34 @@ def main():
             except KeyError:
                 pass
 
-            # genre
-            item_key = program['key']
+            #extended metadata
+            if args.extended_metadata:
+                urls_expire_after = {
+                    '*/library/metadata/*': 60 * 60 * 24 * args.cache_days,
+                    '*': 0,  # Every other non-matching URL: do not cache
+                }
 
-            try:
-                item_data = item_dict[item_key]
-            except KeyError:
-                item_url = f"https://epg.provider.plex.tv{item_key}?&X-Plex-Token={args.token}&X-Plex-Language={args.language}"
-                item_data = load_json(item_url)
-                item_dict[item_key] = item_data
+                requests_cache.install_cache('cache/web2tv', backend='sqlite', urls_expire_after=urls_expire_after)
 
-            try:
-                for genre in item_data['MediaContainer']['Metadata'][0]['Genre']:
-                    ET.SubElement(xml_program, "category", {'lang': args.language}).text = genre['tag']
-            except KeyError:
-                pass
+                # genre
+                item_key = program['key']
+
+                try:
+                    item_data = item_dict[item_key]
+                except KeyError:
+                    item_url = f"https://epg.provider.plex.tv{item_key}?&X-Plex-Token={args.token}&X-Plex-Language={args.language}"
+                    item_data = load_json(item_url)
+                    item_dict[item_key] = item_data
+
+                try:
+                    for genre in item_data['MediaContainer']['Metadata'][0]['Genre']:
+                        ET.SubElement(xml_program, "category", {'lang': args.language}).text = genre['tag']
+                except KeyError:
+                    pass
+
+            else:
+                if program['media_type'] == 'movie':
+                    ET.SubElement(xml_program, "category", {'lang': args.language}).text = 'Movie'
 
             if not program['premiere']:
                 if time_original != '':
@@ -438,7 +493,10 @@ def main():
                 ET.SubElement(xml_program, "premiere")
 
             try:
-                ET.SubElement(xml_program, "video", {"quality": program['video_resolution']})
+                xml_video = ET.SubElement(xml_program, "video")
+                ET.SubElement(xml_video, "present").text = 'yes'
+                ET.SubElement(xml_video, "aspect").text = xml_video_dict[program['resolution']]['aspect']
+                ET.SubElement(xml_video, "quality").text = xml_video_dict[program['resolution']]['quality']
             except KeyError:
                 pass
 
@@ -465,9 +523,8 @@ def main():
 
             x = 0
             for stream in stream_dict['data']:
-                tvg_chno = int(args.startNumber) + x
+                f.write(f'#EXTINF:-1 tvg-ID="{stream["tvg-ID"]}" CUID="{stream["CUID"]}" tvg-chno="{stream["tvg-chno"]}" tvg-name="{stream["tvg-name"]}" tvg-logo="{stream["tvg-logo"]}" group-title={stream["group-title"]}\n')
 
-                f.write(f'#EXTINF:-1 tvg-ID="{stream["tvg-ID"]}" CUID="{stream["CUID"]}" tvg-chno="{tvg_chno}" tvg-name="{stream["tvg-name"]}" tvg-logo="{stream["tvg-logo"]}" group-title={stream["group-title"]}\n')
                 if args.streamlink:
                     f.write(f"hls://{stream['url']}\n")
                 else:
