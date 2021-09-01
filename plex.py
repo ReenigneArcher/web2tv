@@ -4,14 +4,14 @@ import requests_cache
 import time
 from datetime import datetime
 import dateutil.parser
-import html
 
+import json
 import xml.etree.ElementTree as ET
 
 # url constants
 url_type = '1%2C4'
 
-headers = {
+default_headers = {
     'Accept': 'application/json'
 }
 
@@ -145,8 +145,11 @@ def get_args():
     return opts
 
 
-def load_json(url, data=headers):
-    result = requests.get(url=url, headers=data).json()
+def load_json(url, headers=default_headers):
+    try:
+        result = requests.get(url=url, headers=headers).json()
+    except json.decoder.JSONDecodeError:
+        return False
     return result
 
 
@@ -166,9 +169,6 @@ def main():
     program_dict = {'data': []}
     item_dict = {}
     stream_dict = {'data_test': [], 'data': []}
-
-    keyErrors_contentRating = []
-    errorDetails_contentRating = []
 
     # constants
     day = 24 * 60 * 60
@@ -195,7 +195,6 @@ def main():
         print('url[' + str(x + 1) + ']: ' + url)
         grid = load_json(url)
 
-        # import json
         # with open('plex_xml_' + str(x) + '.json', 'w') as write_file:
         #     json.dump(grid, write_file, indent=4)
 
@@ -472,7 +471,8 @@ def main():
                 except KeyError:
                     item_url = f"https://epg.provider.plex.tv{item_key}?&X-Plex-Token={args.token}&X-Plex-Language={args.language}"
                     item_data = load_json(item_url)
-                    item_dict[item_key] = item_data
+                    if item_data:
+                        item_dict[item_key] = item_data
 
                 try:
                     for genre in item_data['MediaContainer']['Metadata'][0]['Genre']:
