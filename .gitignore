@@ -4,3 +4,5 @@ cache/*
 *.xml
 *.m3u
 *.json
+bin/*
+*.log

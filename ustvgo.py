@@ -2,9 +2,22 @@ import argparse
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-
+import os
+import sys
+import zipfile
+import tarfile
 import json
 import xml.etree.ElementTree as ET
+
+import re
+from selenium.common.exceptions import (NoSuchElementException,
+                                        StaleElementReferenceException,
+                                        TimeoutException)
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from seleniumwire import webdriver
 
 xml_constants = {
     'source-info-url': 'https://ustvgo.tv',
@@ -114,12 +127,72 @@ channel_logos = {
     'yes network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/YES.png'
 }
 
+
+def check_gecko_driver():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    bin_dir = os.path.join(script_dir, 'bin')
+
+    if sys.platform.startswith('linux'):
+        platform = 'linux'
+        url = 'https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz'
+        local_platform_path = os.path.join(bin_dir, platform)
+        local_driver_path = os.path.join(local_platform_path, 'geckodriver')
+        var_separator = ':'
+    elif sys.platform == 'darwin':
+        platform = 'mac'
+        url = 'https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-macos.tar.gz'
+        local_platform_path = os.path.join(bin_dir, platform)
+        local_driver_path = os.path.join(local_platform_path, 'geckodriver')
+        var_separator = ':'
+    elif sys.platform.startswith('win'):
+        platform = 'win'
+        url = 'https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-win64.zip'
+        local_platform_path = os.path.join(bin_dir, platform)
+        local_driver_path = os.path.join(local_platform_path, 'geckodriver.exe')
+        var_separator = ';'
+    else:
+        raise RuntimeError('Could not determine your OS')
+
+    if not os.path.isdir(bin_dir):
+        os.mkdir(bin_dir)
+
+    if not os.path.isdir(local_platform_path):
+        os.mkdir(local_platform_path)
+
+    if not os.path.isfile(local_driver_path):
+        print('Downloading gecko driver...', file=sys.stderr)
+        data_resp = requests.get(url, stream=True)
+        file_name = url.split('/')[-1]
+        tgt_file = os.path.join(local_platform_path, file_name)
+        with open(tgt_file, 'wb') as f:
+            for chunk in data_resp.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+        if file_name.endswith('.zip'):
+            with zipfile.ZipFile(tgt_file, 'r') as f_zip:
+                f_zip.extractall(local_platform_path)
+        else:
+            with tarfile.open(tgt_file, 'r') as f_gz:
+                f_gz.extractall(local_platform_path)
+
+        if not os.access(local_driver_path, os.X_OK):
+            os.chmod(local_driver_path, 0o744)
+
+        os.remove(tgt_file)
+
+    if 'PATH' not in os.environ:
+        os.environ['PATH'] = local_platform_path
+    elif local_driver_path not in os.environ['PATH']:
+        os.environ['PATH'] = local_platform_path + var_separator + os.environ['PATH']
+
+
 def get_args():
     # argparse
     parser = argparse.ArgumentParser(description="Python script to convert ustvgo.tv guide into xml/m3u format.",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--number_as_name', action='store_true', required=False,
                         help='Use the channel number as the name and id. Improves channel display in Plex Media Server.')
+
 
     # xml arguments
     parser.add_argument('-x', '--xml_file', type=str, required=False, default='ustvgo.xml',
@@ -137,6 +210,12 @@ def get_args():
     parser.add_argument('--m3u', action='store_true', required=False, help='Generate the m3u file.')
     parser.add_argument('--streamlink', action='store_true', required=False,
                         help='Generate the stream urls for use with Streamlink.')
+    parser.add_argument('-d', '--debug', action='store_true', required=False,
+                        help='Turn of headless mode for Firefox.')
+    parser.add_argument('-t', '--timeout', type=int, default=10,
+                        help='Maximum number of seconds to wait for the response')
+    parser.add_argument('--max_retries', type=int, default=3,
+                        help='Maximum number of attempts to collect data')
 
     opts = parser.parse_args()
 
@@ -179,43 +258,141 @@ def build_channel_list(args):
     return channels
 
 
-def get_guide_data(channels):
+def get_channel_data(args, channels):
     for channel_number, channel_data in channels.items():
         response = requests.get(channel_data['url'])
 
         soup = BeautifulSoup(response.content, "lxml")
 
-        json_url = False
-        for item in soup.find_all('iframe'):
-            if item['src'].startswith('/tvguide/index.html#'):
-                json_url = f"https://ustvgo.tv{item['src']}.json".replace('index.html#', 'JSON2/')
-                print(json_url)
-                break
+        if args.xml:
+            json_url = False
+            for item in soup.find_all('iframe'):
+                if item['src'].startswith('/tvguide/index.html#'):
+                    json_url = f"https://ustvgo.tv{item['src']}.json".replace('index.html#', 'JSON2/')
+                    break
 
-        if json_url:
-            grid = load_json(json_url)
+            if json_url:
+                grid = load_json(json_url)
 
-        channel_data['programs'] = []
-        for day, programs in grid['items'].items():
-            for program in programs:
-                print(program)
-                channel_data['programs'].append(dict(program))
+            channel_data['programs'] = []
+            for day, programs in grid['items'].items():
+                for program in programs:
+                    channel_data['programs'].append(dict(program))
+
+        if args.m3u:
+            for item in soup.find_all('iframe'):
+                if item['src'].startswith('/clappr.php?stream='):
+                    stream = item['src'].rsplit('=', 1)[-1]
+                    channel_data['stream'] = stream
 
     return channels
 
 
+def update_authentication(args, channel):
+    # https://github.com/interlark/ustvgo_downloader/blob/master/update.py
+    ff_options = FirefoxOptions()
+    if not args.debug:
+        ff_options.headless = True
+
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.set_preference('permissions.default.image', 2)
+    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+    firefox_profile.set_preference('dom.disable_beforeunload', True)
+    firefox_profile.set_preference('browser.tabs.warnOnClose', False)
+    firefox_profile.set_preference('media.volume_scale', '0.0')
+
+    driver = webdriver.Firefox(options=ff_options, firefox_profile=firefox_profile)
+
+    IFRAME_CSS_SELECTOR = '.iframe-container>iframe'
+    POPUP_ACCEPT_XPATH_SELECTOR = '//button[contains(text(),"AGREE")]'
+
+    retry = 1
+    url_parts = False
+
+    while retry < args.max_retries and not url_parts:
+        try:
+            driver.get(channel['url'])
+
+            # Get iframe
+            iframe = None
+            try:
+                iframe = driver.find_element_by_css_selector(IFRAME_CSS_SELECTOR)
+            except NoSuchElementException:
+                break
+
+            # Detect VPN-required channels
+            try:
+                driver.switch_to.frame(iframe)
+                driver.find_element_by_xpath("//*[text()='Please use our VPN to watch this channel!']")
+                need_vpn = True
+            except NoSuchElementException:
+                need_vpn = False
+            finally:
+                driver.switch_to.default_content()
+
+            if need_vpn:
+                break
+
+            # close popup if it shows up
+            try:
+                driver.find_element_by_xpath(POPUP_ACCEPT_XPATH_SELECTOR).click()
+            except NoSuchElementException:
+                pass
+
+            # Autoplay
+            iframe.click()
+
+            try:
+                playlist = driver.wait_for_request('/playlist.m3u8', timeout=args.timeout)
+            except TimeoutException:
+                playlist = None
+
+            if playlist:
+                video_link = str(playlist)
+
+                url_parts = video_link.split(f"/{channel['stream']}/", 1)
+
+                if len(url_parts) == 2:
+                    break
+            else:
+                raise Exception()
+
+        except Exception as e:
+            print('Failed to get key, retry(%d) ...' % retry)
+            retry += 1
+
+        except KeyboardInterrupt:
+            driver.close()
+            driver.quit()
+            sys.exit(1)
+
+    driver.close()
+    driver.quit()
+
+    return url_parts
+
+    try:
+        return captured_key
+    except NameError:
+        return False
+
+
 def main():
     args = get_args()
-    channels = build_channel_list(args)
 
     if args.xml:
-        channels = get_guide_data(channels)
         xml_tv = ET.Element("tv", xml_constants)
 
     if args.m3u:
+        check_gecko_driver()
         m3u_f = open(args.m3u_file, "w", encoding='utf-8')
 
         m3u_f.write('#EXTM3U\n')
+
+    channels = build_channel_list(args)
+    channels = get_channel_data(args, channels)
+
+    authentication = False
 
     for channel_number, channel in channels.items():
         if args.number_as_name:
@@ -292,31 +469,37 @@ def main():
                 ET.SubElement(xml_video, "present").text = 'yes'
 
         if args.m3u:
-            if args.number_as_name:
-                tvg_name = f"{channel_number}"
-                tvg_id = f"{channel_number}"
-                cuid = f"{channel_number}"
-            else:
-                tvg_name = f"{args.prefix}{channel['name']}"
-                tvg_id = f"{args.prefix}{channel['name']}"
-                cuid = f"{args.prefix}{channel['name']}"
+            print(channel['url'])
+            if not authentication:
+                authentication = update_authentication(args, channel)
+            if authentication:
+                if args.number_as_name:
+                    tvg_name = f"{channel_number}"
+                    tvg_id = f"{channel_number}"
+                    cuid = f"{channel_number}"
+                else:
+                    tvg_name = f"{args.prefix}{channel['name']}"
+                    tvg_id = f"{args.prefix}{channel['name']}"
+                    cuid = f"{args.prefix}{channel['name']}"
 
-            tvg_chno = f"{channel_number}"
-            group_title = f'"USTVGO.TV",{args.prefix}{channel["name"]}'
+                tvg_chno = f"{channel_number}"
+                group_title = f'"USTVGO.TV",{args.prefix}{channel["name"]}'
 
-            try:
-                tvg_logo = channel_logos[channel['name'].lower()]
-                m3u_f.write(
-                    f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" tvg-logo="{tvg_logo}" group-title={group_title}\n')
-            except KeyError:
-                m3u_f.write(
-                    f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" group-title={group_title}\n')
+                try:
+                    tvg_logo = channel_logos[channel['name'].lower()]
+                    m3u_f.write(
+                        f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" tvg-logo="{tvg_logo}" group-title={group_title}\n')
+                except KeyError:
+                    m3u_f.write(
+                        f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" group-title={group_title}\n')
 
-            if args.streamlink:
-                m3u_f.write(f"{channel['url']}\n")
+                if args.streamlink:
+                    #m3u_f.write(f"hls://{channel['stream']}{authentication}\n")
+                    m3u_f.write(f"hls://{authentication[0]}/{channel['stream']}/{authentication[1]}\n")
 
-            else:
-                m3u_f.write(f"{channel['url']}\n")
+                else:
+                    #m3u_f.write(f"{channel['stream']}{authentication}\n")
+                    m3u_f.write(f"{authentication[0]}/{channel['stream']}/{authentication[1]}\n")
 
     if args.xml:
         # write the xml file
@@ -326,9 +509,6 @@ def main():
             xml_f.write('<!DOCTYPE tv SYSTEM "xmltv.dtd">\n'.encode('utf-8'))
 
             new_xml = ET.ElementTree(xml_tv)
-
-            # for child in xml_tv:
-            #     print(child.tag, child.attrib)
 
             try:
                 ET.indent(new_xml, space="\t", level=0)
