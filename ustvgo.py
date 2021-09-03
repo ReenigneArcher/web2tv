@@ -275,10 +275,10 @@ def get_channel_data(args, channels):
             if json_url:
                 grid = load_json(json_url)
 
-            channel_data['programs'] = []
-            for day, programs in grid['items'].items():
-                for program in programs:
-                    channel_data['programs'].append(dict(program))
+                channel_data['programs'] = []
+                for day, programs in grid['items'].items():
+                    for program in programs:
+                        channel_data['programs'].append(dict(program))
 
         if args.m3u:
             for item in soup.find_all('iframe'):
