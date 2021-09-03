@@ -31,100 +31,100 @@ default_headers = {
 }
 
 channel_logos = {
-    'abc': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/ABC.svg',
-    'acc network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/ACC%20Network.svg',
-    'ae': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/AandE.svg',
-    'amc': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/AMC.svg',
-    'animal': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Animal%20Planet.svg',
-    'bbcamerica': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/BBC%20America.svg',
-    'big ten network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Big%20Ten%20Network.svg',
-    'bet': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/BET.svg',
-    'boomerang': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Boomerang.svg',
-    'bravo': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Bravo.svg',
-    'c-span': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/C-SPAN.svg',
-    'cbs': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/CBS.svg',
-    'cbs sports network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/CBS%20Sports%20Network.svg',
-    'cinemax': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Cinemax.svg',
-    'cmt': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/CMT.svg',
-    'cartoon network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Cartoon%20Network.svg',
-    'cnbc': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/CNBC.svg',
-    'cnn': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/CNN.svg',
-    'comedy': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Comedy%20Central.svg',
-    'cw': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/The_CW.svg/800px-The_CW.svg.png',
-    'destination america': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Destination%20America.svg',
-    'discovery': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Discovery.svg',
-    'disney': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Disney%20Channel.svg',
-    'disneyjr': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Disney%20Junior.svg',
-    'disneyxd': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Disney%20XD.svg',
-    'do it yourself ( diy )': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/DIY%20Network.svg',
-    'e!': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/E.svg',
-    'espn': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/ESPN.svg',
-    'espn2': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/ESPN%202.svg',
-    'espnu': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/ESPN%20U.svg',
-    'espnews': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/ESPNews.svg',
-    'foodnetwork': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Food%20Network.svg',
-    'fox': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Fox.svg',
-    'foxbusiness': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Fox%20Business%20Network.svg',
-    'foxnews': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Fox%20News%20Channel.svg',
-    'freeform': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Freeform.svg',
-    'fox sports 1 (fs1)': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/FS1.svg',
-    'fox sports 2 (fs2)': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/FS2.svg',
-    'fx': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/FX.svg',
-    'fx movie channel': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/FX%20Movie%20Channel.svg',
-    'fxx': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/FXX.svg',
-    'golf channel': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Golf%20Channel.svg',
-    'game show network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Game%20Show%20Network.svg',
-    'hallmark channel': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Hallmark%20Channel.svg',
-    'hbo': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/HBO.svg',
-    'hgtv': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/HGTV.svg',
-    'history': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/History.svg',
-    'hln': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/HLN.svg',
-    'hallmark movies & mysteries': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Hallmark%20Movies%20and%20Mysteries.svg',
-    'investigation discovery': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Investigation%20Discovery.svg',
-    'lifetime': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Lifetime.svg',
-    'lifetime movie network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/LMN.svg',
-    'mlb network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/MLB%20Network.svg',
-    'motor trend': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Motor%20Trend.svg',
-    'msnbc': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/MSNBC.svg',
-    'mtv': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/MTV.svg',
-    'national geographic': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/National%20Geographic.svg',
-    'nat geo wild': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/National%20Geographic%20Wild.svg',
-    'nba tv': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/NBA%20TV.svg',
-    'nbc': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/NBC.svg',
-    'nbc sports ( nbcsn )': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/NBCSN.svg',
-    'nfl network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/NFL%20Network.svg',
-    'nfl redzone': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/NFL%20RedZone.svg',
-    'nickelodeon': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Nickelodeon.svg',
-    'nicktoons': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Nicktoons.svg',
-    'one america news network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/One%20America%20News%20Network.png',
-    'oprah winfrey network (own)': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Oprah%20Winfrey%20Network.svg',
-    'olympic channel': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Olympic%20Channel.svg',
-    'oxygen': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Oxygen.svg',
-    'paramount': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Paramount%20Network.svg',
-    'pbs': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/PBS.svg',
-    'pop': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Pop.svg',
-    'science': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Science.svg',
-    'sec network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/SEC%20Network.svg',
-    'showtime': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Showtime.svg',
-    'starz': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Starz.svg',
-    'sundancetv': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/SundanceTV.svg',
-    'syfy': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Syfy.svg',
-    'tbs': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/TBS.svg',
-    'turner classic movies (tcm)': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/TCM.svg',
-    'telemnundo': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Telemundo.svg',
-    'tennis channel': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Tennis%20Channel.svg',
-    'tlc': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/TLC.svg',
-    'tnt': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/TNT.svg',
-    'travel channel': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Travel%20Channel.svg',
-    'trutv': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/TruTV.svg',
-    'tv land': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/TV%20Land.svg',
-    'the weather channel': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/The%20Weather%20Channel.svg',
-    'univision': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/Univision.svg',
-    'usa network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/USA%20Network.svg',
-    'vh1': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/VH1.svg',
-    'we tv': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/We%20TV.svg',
-    'wwe network': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/WWE_Network_logo.svg/556px-WWE_Network_logo.svg.png',
-    'yes network': 'https://raw.githubusercontent.com/Jasmeet181/mediaportal-us-logos/master/TV/YES.png'
+    'abc': 'https://zap2it.tmsimg.com/h3/NowShowing/10003/s10003_h3_aa.png',
+    'acc network': 'https://zap2it.tmsimg.com/h3/NowShowing/111871/s111871_h3_aa.png',
+    'ae': 'https://zap2it.tmsimg.com/h3/NowShowing/10035/s10035_h3_aa.png',
+    'amc': 'https://zap2it.tmsimg.com/h3/NowShowing/10021/s10021_h3_aa.png',
+    'animal': 'https://zap2it.tmsimg.com/h3/NowShowing/16331/s16331_h3_aa.png',
+    'bbcamerica': 'https://zap2it.tmsimg.com/h3/NowShowing/18332/s18332_h3_aa.png',
+    'big ten network': 'https://zap2it.tmsimg.com/h3/NowShowing/56783/s56783_h3_aa.png',
+    'bet': 'https://zap2it.tmsimg.com/h3/NowShowing/10051/s10051_h3_aa.png',
+    'boomerang': 'https://zap2it.tmsimg.com/h3/NowShowing/21883/s21883_h3_aa.png',
+    'bravo': 'https://zap2it.tmsimg.com/h3/NowShowing/10057/s10057_h3_aa.png',
+    'c-span': 'https://zap2it.tmsimg.com/h3/NowShowing/10161/s10161_h3_aa.png',
+    'cbs': 'https://zap2it.tmsimg.com/h3/NowShowing/10098/s10098_h3_aa.png',
+    'cbs sports network': 'https://zap2it.tmsimg.com/h3/NowShowing/16365/s16365_h3_aa.png',
+    'cinemax': 'https://zap2it.tmsimg.com/h3/NowShowing/10120/s10120_h3_aa.png',
+    'cmt': 'https://zap2it.tmsimg.com/h3/NowShowing/10138/s10138_h3_aa.png',
+    'cartoon network': 'https://zap2it.tmsimg.com/h3/NowShowing/12131/s12131_h3_aa.png',
+    'cnbc': 'https://zap2it.tmsimg.com/h3/NowShowing/10139/s10139_h3_aa.png',
+    'cnn': 'https://zap2it.tmsimg.com/h3/NowShowing/10142/s10142_h3_aa.png',
+    'comedy': 'https://zap2it.tmsimg.com/h3/NowShowing/10149/s10149_h3_aa.png',
+    'cw': 'https://zap2it.tmsimg.com/h3/NowShowing/51306/s51306_h3_aa.png',
+    'destination america': 'https://zap2it.tmsimg.com/h3/NowShowing/16617/s16617_h3_aa.png',
+    'discovery': 'https://zap2it.tmsimg.com/h3/NowShowing/11150/s11150_h3_aa.png',
+    'disney': 'https://zap2it.tmsimg.com/h3/NowShowing/10171/s10171_h3_aa.png',
+    'disneyjr': 'https://zap2it.tmsimg.com/h3/NowShowing/74796/s74796_h3_aa.png',
+    'disneyxd': 'https://zap2it.tmsimg.com/h3/NowShowing/18279/s18279_h3_aa.png',
+    'do it yourself ( diy )': 'https://zap2it.tmsimg.com/h3/NowShowing/67375/s67375_h3_aa.png',
+    'e!': 'https://zap2it.tmsimg.com/h3/NowShowing/10989/s10989_h3_aa.png',
+    'espn': 'https://zap2it.tmsimg.com/h3/NowShowing/10179/s10179_h3_aa.png',
+    'espn2': 'https://zap2it.tmsimg.com/h3/NowShowing/12444/s12444_h3_aa.png',
+    'espnu': 'https://zap2it.tmsimg.com/h3/NowShowing/45654/s45654_h3_aa.png',
+    'espnews': 'https://zap2it.tmsimg.com/h3/NowShowing/16485/s16485_h3_aa.png',
+    'foodnetwork': 'https://zap2it.tmsimg.com/h3/NowShowing/12574/s12574_h3_aa.png',
+    'fox': 'https://zap2it.tmsimg.com/h3/NowShowing/10212/s10212_h3_aa.png',
+    'foxbusiness': 'https://zap2it.tmsimg.com/h3/NowShowing/58649/s58649_h3_aa.png',
+    'foxnews': 'https://zap2it.tmsimg.com/h3/NowShowing/16374/s16374_h3_aa.png',
+    'freeform': 'https://zap2it.tmsimg.com/h3/NowShowing/10093/s10093_h3_aa.png',
+    'fox sports 1 (fs1)': 'https://zap2it.tmsimg.com/h3/NowShowing/82541/s82541_h3_aa.png',
+    'fox sports 2 (fs2)': 'https://zap2it.tmsimg.com/h3/NowShowing/33178/s33178_h3_aa.png',
+    'fx': 'https://zap2it.tmsimg.com/h3/NowShowing/14321/s14321_h3_aa.png',
+    'fx movie channel': 'https://zap2it.tmsimg.com/h3/NowShowing/14988/s14988_h3_aa.png',
+    'fxx': 'https://zap2it.tmsimg.com/h3/NowShowing/17927/s17927_h3_aa.png',
+    'golf channel': 'https://zap2it.tmsimg.com/h3/NowShowing/14899/s14899_h3_aa.png',
+    'game show network': 'https://zap2it.tmsimg.com/h3/NowShowing/14909/s14909_h3_aa.png',
+    'hallmark channel': 'https://zap2it.tmsimg.com/h3/NowShowing/11221/s11221_h3_aa.png',
+    'hbo': 'https://zap2it.tmsimg.com/h3/NowShowing/10240/s10240_h3_aa.png',
+    'hgtv': 'https://zap2it.tmsimg.com/h3/NowShowing/14902/s14902_h3_aa.png',
+    'history': 'https://zap2it.tmsimg.com/h3/NowShowing/14771/s14771_h3_aa.png',
+    'hln': 'https://zap2it.tmsimg.com/h3/NowShowing/10145/s10145_h3_aa.png',
+    'hallmark movies & mysteries': 'https://zap2it.tmsimg.com/h3/NowShowing/46710/s46710_h3_aa.png',
+    'investigation discovery': 'https://zap2it.tmsimg.com/h3/NowShowing/16615/s16615_h3_aa.png',
+    'lifetime': 'https://zap2it.tmsimg.com/h3/NowShowing/10918/s10918_h3_aa.png',
+    'lifetime movie network': 'https://zap2it.tmsimg.com/h3/NowShowing/18480/s18480_h3_aa.png',
+    'mlb network': 'https://zap2it.tmsimg.com/h3/NowShowing/62081/s62081_h3_aa.png',
+    'motor trend': 'https://zap2it.tmsimg.com/h3/NowShowing/31046/s31046_h3_aa.png',
+    'msnbc': 'https://zap2it.tmsimg.com/h3/NowShowing/16300/s16300_h3_aa.png',
+    'mtv': 'https://zap2it.tmsimg.com/h3/NowShowing/10986/s10986_h3_aa.png',
+    'national geographic': 'https://zap2it.tmsimg.com/h3/NowShowing/24959/s24959_h3_aa.png',
+    'nat geo wild': 'https://zap2it.tmsimg.com/h3/NowShowing/66804/s66804_h3_aa.png',
+    'nba tv': 'https://zap2it.tmsimg.com/h3/NowShowing/32281/s32281_h3_aa.png',
+    'nbc': 'https://zap2it.tmsimg.com/h3/NowShowing/10991/s10991_h3_aa.png',
+    'nbc sports ( nbcsn )': 'https://zap2it.tmsimg.com/h3/NowShowing/15952/s15952_h3_aa.png',
+    'nfl network': 'https://zap2it.tmsimg.com/h3/NowShowing/45399/s45399_h3_aa.png',
+    'nfl redzone': 'https://zap2it.tmsimg.com/h3/NowShowing/65025/s65025_h3_aa.png',
+    'nickelodeon': 'https://zap2it.tmsimg.com/h3/NowShowing/11006/s11006_h3_aa.png',
+    'nicktoons': 'https://zap2it.tmsimg.com/h3/NowShowing/30420/s30420_h3_aa.png',
+    'one america news network': 'https://zap2it.tmsimg.com/h3/NowShowing/82542/s82542_h3_aa.png',
+    'oprah winfrey network (own)': 'https://zap2it.tmsimg.com/h3/NowShowing/70387/s70387_h3_aa.png',
+    'olympic channel': 'https://zap2it.tmsimg.com/h3/NowShowing/104089/s104089_h3_aa.png',
+    'oxygen': 'https://zap2it.tmsimg.com/h3/NowShowing/21484/s21484_h3_aa.png',
+    'paramount': 'https://zap2it.tmsimg.com/h3/NowShowing/11163/s11163_h3_aa.png',
+    'pbs': 'https://zap2it.tmsimg.com/h3/NowShowing/11039/s11039_h3_aa.png',
+    'pop': 'https://zap2it.tmsimg.com/h3/NowShowing/16715/s16715_h3_aa.png',
+    'science': 'https://zap2it.tmsimg.com/h3/NowShowing/16616/s16616_h3_aa.png',
+    'sec network': 'https://zap2it.tmsimg.com/h3/NowShowing/89714/s89714_h3_aa.png',
+    'showtime': 'https://zap2it.tmsimg.com/h3/NowShowing/11115/s11115_h3_aa.png',
+    'starz': 'https://zap2it.tmsimg.com/h3/NowShowing/12719/s12719_h3_aa.png',
+    'sundancetv': 'https://zap2it.tmsimg.com/h3/NowShowing/16108/s16108_h3_aa.png',
+    'syfy': 'https://zap2it.tmsimg.com/h3/NowShowing/11097/s11097_h3_aa.png',
+    'tbs': 'https://zap2it.tmsimg.com/h3/NowShowing/11867/s11867_h3_aa.png',
+    'turner classic movies (tcm)': 'https://zap2it.tmsimg.com/h3/NowShowing/12852/s12852_h3_aa.png',
+    'telemnundo': 'https://zap2it.tmsimg.com/h3/NowShowing/10239/s10239_h3_aa.png',
+    'tennis channel': 'https://zap2it.tmsimg.com/h3/NowShowing/60316/s60316_h3_aa.png',
+    'tlc': 'https://zap2it.tmsimg.com/h3/NowShowing/11158/s11158_h3_aa.png',
+    'tnt': 'https://zap2it.tmsimg.com/h3/NowShowing/11164/s11164_h3_aa.png',
+    'travel channel': 'https://zap2it.tmsimg.com/h3/NowShowing/11180/s11180_h3_aa.png',
+    'trutv': 'https://zap2it.tmsimg.com/h3/NowShowing/10153/s10153_h3_aa.png',
+    'tv land': 'https://zap2it.tmsimg.com/h3/NowShowing/16123/s16123_h3_aa.png',
+    'the weather channel': 'https://zap2it.tmsimg.com/h3/NowShowing/11187/s11187_h3_aa.png',
+    'univision': 'https://zap2it.tmsimg.com/h3/NowShowing/11118/s11118_h3_aa.png',
+    'usa network': 'https://zap2it.tmsimg.com/h3/NowShowing/11207/s11207_h3_aa.png',
+    'vh1': 'https://zap2it.tmsimg.com/h3/NowShowing/11218/s11218_ll_h15_ab.png',
+    'we tv': 'https://zap2it.tmsimg.com/h3/NowShowing/16409/s16409_h3_aa.png',
+    'wwe network': 'https://upload.wikimedia.org/wikipedia/commons/f/fc/WWENetworkLogo.png',  # only image not from zap2it
+    'yes network': 'https://zap2it.tmsimg.com/h3/NowShowing/63558/s63558_h3_aa.png'
 }
 
 
@@ -192,6 +192,7 @@ def get_args():
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--number_as_name', action='store_true', required=False,
                         help='Use the channel number as the name and id. Improves channel display in Plex Media Server.')
+    parser.add_argument('--proxy', type=str, default=None, help='Use proxy.')
 
 
     # xml arguments
@@ -294,6 +295,19 @@ def update_authentication(args, channel):
     if not args.debug:
         ff_options.headless = True
 
+    seleniumwire_options = {
+        'connection_timeout': None,
+        'verify_ssl': True,
+        'suppress_connection_errors': False
+    }
+
+    if args.proxy:  # failing when trying to use proxy...
+        seleniumwire_options['proxy'] = {
+            'https': f'{args.proxy}',
+            'https': f'{args.proxy}',
+            'no_proxy': 'localhost,127.0.0.1'
+        }
+
     firefox_profile = webdriver.FirefoxProfile()
     firefox_profile.set_preference('permissions.default.image', 2)
     firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
@@ -301,7 +315,11 @@ def update_authentication(args, channel):
     firefox_profile.set_preference('browser.tabs.warnOnClose', False)
     firefox_profile.set_preference('media.volume_scale', '0.0')
 
-    driver = webdriver.Firefox(options=ff_options, firefox_profile=firefox_profile)
+    driver = webdriver.Firefox(
+        seleniumwire_options=seleniumwire_options,
+        options=ff_options,
+        firefox_profile=firefox_profile
+    )
 
     IFRAME_CSS_SELECTOR = '.iframe-container>iframe'
     POPUP_ACCEPT_XPATH_SELECTOR = '//button[contains(text(),"AGREE")]'
@@ -494,11 +512,9 @@ def main():
                         f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" group-title={group_title}\n')
 
                 if args.streamlink:
-                    #m3u_f.write(f"hls://{channel['stream']}{authentication}\n")
                     m3u_f.write(f"hls://{authentication[0]}/{channel['stream']}/{authentication[1]}\n")
 
                 else:
-                    #m3u_f.write(f"{channel['stream']}{authentication}\n")
                     m3u_f.write(f"{authentication[0]}/{channel['stream']}/{authentication[1]}\n")
 
     if args.xml:
