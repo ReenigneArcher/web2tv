@@ -260,42 +260,38 @@ def build_channel_list(args):
 
 
 def get_channel_data(args, channels):
-    channels['authentication'] = False
+    authentication = False
 
-    try:
-        for channel_number, channel_data in channels.items():
-            response = requests.get(channel_data['url'])
+    for channel_number, channel_data in channels.items():
+        response = requests.get(channel_data['url'])
 
-            soup = BeautifulSoup(response.content, "lxml")
+        soup = BeautifulSoup(response.content, "lxml")
 
-            if args.xml:
-                json_url = False
-                for item in soup.find_all('iframe'):
-                    if item['src'].startswith('/tvguide/index.html#'):
-                        json_url = f"https://ustvgo.tv{item['src']}.json".replace('index.html#', 'JSON2/')
-                        break
+        if args.xml:
+            json_url = False
+            for item in soup.find_all('iframe'):
+                if item['src'].startswith('/tvguide/index.html#'):
+                    json_url = f"https://ustvgo.tv{item['src']}.json".replace('index.html#', 'JSON2/')
+                    break
 
-                channel_data['programs'] = []
-                if json_url:
-                    grid = load_json(json_url)
+            channel_data['programs'] = []
+            if json_url:
+                grid = load_json(json_url)
 
-                    for day, programs in grid['items'].items():
-                        for program in programs:
-                            channel_data['programs'].append(dict(program))
+                for day, programs in grid['items'].items():
+                    for program in programs:
+                        channel_data['programs'].append(dict(program))
 
-            if args.m3u:
-                for item in soup.find_all('iframe'):
-                    if item['src'].startswith('/clappr.php?stream='):
-                        stream = item['src'].rsplit('=', 1)[-1]
-                        channel_data['stream'] = stream
+        if args.m3u:
+            for item in soup.find_all('iframe'):
+                if item['src'].startswith('/clappr.php?stream='):
+                    stream = item['src'].rsplit('=', 1)[-1]
+                    channel_data['stream'] = stream
 
-                if not channels['authentication']:
-                    channels['authentication'] = update_authentication(args, channel_data)
+            if not authentication:
+                authentication = update_authentication(args, channel_data)
 
-    except TypeError:
-        pass
-
-    return channels
+    return channels, authentication
 
 
 def update_authentication(args, channel):
@@ -417,114 +413,111 @@ def main():
         m3u_f.write('#EXTM3U\n')
 
     channels = build_channel_list(args)
-    channels = get_channel_data(args, channels)
+    channels, authentication = get_channel_data(args, channels)
 
-    try:
-        for channel_number, channel in channels.items():
-            if args.number_as_name:
-                channel_id = str(channel_number)
+    for channel_number, channel in channels.items():
+        if args.number_as_name:
+            channel_id = str(channel_number)
 
-            else:
-                channel_id = f"{args.prefix}{channel['name']}"
+        else:
+            channel_id = f"{args.prefix}{channel['name']}"
 
-            if args.xml:
-                xml_channel = ET.SubElement(xml_tv, "channel", {"id": channel_id})
+        if args.xml:
+            xml_channel = ET.SubElement(xml_tv, "channel", {"id": channel_id})
 
-                if args.prefix != '':
-                    ET.SubElement(xml_channel, "display-name").text = f"{args.prefix}{channel['name']}"
-                print(channel['name'])
+            if args.prefix != '':
+                ET.SubElement(xml_channel, "display-name").text = f"{args.prefix}{channel['name']}"
+            print(channel['name'])
 
-                display_names_types = ['name']
-                display_names = []
-                for display_name_type in display_names_types:
-                    try:
-                        if channel[display_name_type] not in display_names:
-                            display_names.append(channel[display_name_type])
-                            ET.SubElement(xml_channel, "display-name").text = f'{channel[display_name_type]}'
-                    except KeyError:
-                        pass
-
+            display_names_types = ['name']
+            display_names = []
+            for display_name_type in display_names_types:
                 try:
-                    ET.SubElement(xml_channel, "icon", {'src': channel_logos[channel['name'].lower()]})
+                    if channel[display_name_type] not in display_names:
+                        display_names.append(channel[display_name_type])
+                        ET.SubElement(xml_channel, "display-name").text = f'{channel[display_name_type]}'
                 except KeyError:
                     pass
 
-                for program in channel['programs']:
-                    time_start = datetime.utcfromtimestamp(int(program['start_timestamp'])).strftime('%Y%m%d%H%M%S')
-                    time_end = datetime.utcfromtimestamp(int(program['end_timestamp'])).strftime('%Y%m%d%H%M%S')
+            try:
+                ET.SubElement(xml_channel, "icon", {'src': channel_logos[channel['name'].lower()]})
+            except KeyError:
+                pass
 
-                    offset = '+0000'
+            for program in channel['programs']:
+                time_start = datetime.utcfromtimestamp(int(program['start_timestamp'])).strftime('%Y%m%d%H%M%S')
+                time_end = datetime.utcfromtimestamp(int(program['end_timestamp'])).strftime('%Y%m%d%H%M%S')
 
-                    program_header_dict = {
-                        'start': f'{time_start} {offset}',
-                        'stop': f'{time_end} {offset}',
-                        'channel': channel_id
-                    }
+                offset = '+0000'
 
-                    xml_program = ET.SubElement(xml_tv, "programme", program_header_dict)
+                program_header_dict = {
+                    'start': f'{time_start} {offset}',
+                    'stop': f'{time_end} {offset}',
+                    'channel': channel_id
+                }
 
-                    try:
-                        ET.SubElement(xml_program, "title", {'lang': args.language}).text = program['name']
-                        print(program['name'])
-                    except KeyError:
-                        pass
+                xml_program = ET.SubElement(xml_tv, "programme", program_header_dict)
 
-                    try:
-                        if program['description'] != "":
-                            ET.SubElement(xml_program, "desc", {'lang': args.language}).text = program['description']
-                    except KeyError:
-                        pass
+                try:
+                    ET.SubElement(xml_program, "title", {'lang': args.language}).text = program['name']
+                    print(program['name'])
+                except KeyError:
+                    pass
 
-                    try:
-                        ET.SubElement(xml_program, "length", {'units': 'seconds'}).text = str(program['end_timestamp'] - program['start_timestamp'])
-                    except KeyError:
-                        pass
+                try:
+                    if program['description'] != "":
+                        ET.SubElement(xml_program, "desc", {'lang': args.language}).text = program['description']
+                except KeyError:
+                    pass
 
-                    try:
-                        if program['image'] != "":
-                            ET.SubElement(xml_program, "icon", {'src': program['image']})
-                    except KeyError:
-                        pass
+                try:
+                    ET.SubElement(xml_program, "length", {'units': 'seconds'}).text = str(program['end_timestamp'] - program['start_timestamp'])
+                except KeyError:
+                    pass
 
-                    try:
-                        ET.SubElement(xml_program, "episode-num", {'system': 'ustvgo'}).text = str(program['id'])
-                    except KeyError:
-                        pass
+                try:
+                    if program['image'] != "":
+                        ET.SubElement(xml_program, "icon", {'src': program['image']})
+                except KeyError:
+                    pass
 
-                    xml_video = ET.SubElement(xml_program, "video")
-                    ET.SubElement(xml_video, "present").text = 'yes'
+                try:
+                    ET.SubElement(xml_program, "episode-num", {'system': 'ustvgo'}).text = str(program['id'])
+                except KeyError:
+                    pass
 
-            if args.m3u:
-                print(channel['url'])
+                xml_video = ET.SubElement(xml_program, "video")
+                ET.SubElement(xml_video, "present").text = 'yes'
 
-                if channels['authentication']:
-                    if args.number_as_name:
-                        tvg_name = f"{channel_number}"
-                        tvg_id = f"{channel_number}"
-                        cuid = f"{channel_number}"
-                    else:
-                        tvg_name = f"{args.prefix}{channel['name']}"
-                        tvg_id = f"{args.prefix}{channel['name']}"
-                        cuid = f"{args.prefix}{channel['name']}"
+        if args.m3u:
+            print(channel['url'])
 
-                    tvg_chno = f"{channel_number}"
-                    group_title = f'"USTVGO.TV",{args.prefix}{channel["name"]}'
+            if authentication:
+                if args.number_as_name:
+                    tvg_name = f"{channel_number}"
+                    tvg_id = f"{channel_number}"
+                    cuid = f"{channel_number}"
+                else:
+                    tvg_name = f"{args.prefix}{channel['name']}"
+                    tvg_id = f"{args.prefix}{channel['name']}"
+                    cuid = f"{args.prefix}{channel['name']}"
 
-                    try:
-                        tvg_logo = channel_logos[channel['name'].lower()]
-                        m3u_f.write(
-                            f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" tvg-logo="{tvg_logo}" group-title={group_title}\n')
-                    except KeyError:
-                        m3u_f.write(
-                            f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" group-title={group_title}\n')
+                tvg_chno = f"{channel_number}"
+                group_title = f'"USTVGO.TV",{args.prefix}{channel["name"]}'
 
-                    if args.streamlink:
-                        m3u_f.write(f"hls://{channels['authentication'][0]}/{channel['stream']}/{channels['authentication'][1]}\n")
+                try:
+                    tvg_logo = channel_logos[channel['name'].lower()]
+                    m3u_f.write(
+                        f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" tvg-logo="{tvg_logo}" group-title={group_title}\n')
+                except KeyError:
+                    m3u_f.write(
+                        f'#EXTINF:-1 tvg-ID="{tvg_id}" CUID="{cuid}" tvg-chno="{tvg_chno}" tvg-name="{tvg_name}" group-title={group_title}\n')
 
-                    else:
-                        m3u_f.write(f"{channels['authentication'][0]}/{channel['stream']}/{channels['authentication'][1]}\n")
-    except TypeError:
-        pass
+                if args.streamlink:
+                    m3u_f.write(f"hls://{authentication[0]}/{channel['stream']}/{authentication[1]}\n")
+
+                else:
+                    m3u_f.write(f"{authentication[0]}/{channel['stream']}/{authentication[1]}\n")
 
     if args.xml:
         # write the xml file
