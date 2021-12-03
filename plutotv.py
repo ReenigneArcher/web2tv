@@ -416,7 +416,7 @@ def main():
 
             else:
                 m3u_f.write(
-                    f"https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/{channel['id']}/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid={sid}&deviceId={did}&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true")
+                    f"https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/{channel['id']}/master.m3u8?terminate=false&deviceType=web&deviceMake=Chrome&deviceModel=web&sid={sid}&deviceId={did}&deviceVersion=unknown&appVersion=unknown&clientTime=0&deviceDNT=0&userId=&advertisingId=&appName=web&buildVersion=&appStoreUrl=&architecture=&includeExtendedEvents=false&marketingRegion=US&serverSideAds=true\n")
 
         x += 1
 
