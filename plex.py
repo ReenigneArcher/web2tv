@@ -357,11 +357,15 @@ def main():
 
             offset = '+0000'
 
+            if args.number_as_name:
+                temp_channel = f"{program['channel_data']['channel_number']}"
+            else:
+                temp_channel = f"{args.prefix}{program['channel_data']['short_title']}"
+
             program_header_dict = {
                 'start': f'{time_start} {offset}',
                 'stop': f'{time_end} {offset}',
-                'channel': f"{program['channel_data']['channel_number']}"
-                #'channel': f"{args.prefix}{program['channel_data']['short_title']}"
+                'channel': temp_channel
             }
 
             xml_program = ET.SubElement(xml_tv, "programme", program_header_dict)
