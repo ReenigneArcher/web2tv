@@ -435,7 +435,11 @@ def main():
                         if season_found:
                             onscreen_ns = f'{onscreen_ns}E{program[number]}'
                             common_ns = f'{common_ns}E{program[number]}'
-                            xmltv_ns = f'{xmltv_ns}.{int(program[number]) -1}.'
+                            try:
+                                xmltv_ns = f'{xmltv_ns}.{int(program[number]) -1}.'
+                            except ValueError:
+                                pass
+                                
                 except KeyError:
                     pass
 
