@@ -1,2 +1,8 @@
 .idea/*
 venv/*
+cache/*
+*.xml
+*.m3u
+*.json
+bin/*
+*.log

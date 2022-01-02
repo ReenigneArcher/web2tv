@@ -2,3 +2,8 @@ argparse
 datetime
 python-dateutil
 requests
+requests-cache
+beautifulsoup4
+lxml
+selenium
+selenium-wire
